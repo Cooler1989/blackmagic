@@ -49,7 +49,7 @@ endif
 ifneq ($(HOSTED_BMP_ONLY), 1)
  $(shell pkg-config --exists libftdi1)
  ifneq ($(.SHELLSTATUS), 0)
-  $(error Please install libftdi1 dependency or set HOSTED_BMP_ONLY to 1)
+  $(warning Please install libftdi1 dependency or set HOSTED_BMP_ONLY to 1)
  endif
  LDFLAGS += -lusb-1.0
  CFLAGS += $(shell pkg-config --cflags libftdi1)
@@ -65,7 +65,7 @@ ifneq ($(HOSTED_BMP_ONLY), 1)
  else
   $(shell pkg-config --exists $(HIDAPILIB))
   ifneq ($(.SHELLSTATUS), 0)
-   $(error Please install $(HIDAPILIB) dependency or set HOSTED_BMP_ONLY to 1)
+   $(warning Please install $(HIDAPILIB) dependency or set HOSTED_BMP_ONLY to 1)
   endif
   CFLAGS += $(shell pkg-config --cflags $(HIDAPILIB))
   LDFLAGS += $(shell pkg-config --libs $(HIDAPILIB))

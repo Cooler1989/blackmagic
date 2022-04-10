@@ -131,6 +131,48 @@ cable_desc_t cable_desc[] = {
 		.name = "ftdijtag"
 	},
 	{
+		/* Buffered connection from FTDI to Jtag/Swd.
+		 * TCK and TMS not independant switchable!
+		 * SWD not possible.
+		 * PIN4 low enables buffers
+		 * PIN5 Low indicates VRef applied
+		 * PIN6 reads back SRST
+		 * CBUS PIN1 Sets SRST
+		 * CBUS PIN2 low drives SRST
+		 */
+		//  .vendor = 0x0403,
+		//  .product = 0x6010,
+		//  .interface = INTERFACE_A,
+		//  .init.ddr_low = PIN4,
+		//  .init.data_high = PIN4 | PIN3 | PIN2,
+		//  .init.ddr_high = PIN4 | PIN3 | PIN2 | PIN1 | PIN0,
+		//  .assert_srst.data_high   = ~PIN3,
+		//  .deassert_srst.data_high =  PIN3,
+		//  .srst_get_port_cmd = GET_BITS_LOW,
+		//  .srst_get_pin = PIN6,
+
+
+		.vendor = 0x0403,
+		.product = 0x6010,
+		.interface = INTERFACE_B,
+		.init.data_low = PIN6 | PIN5,
+		.init.ddr_low  = PIN6 | PIN5,
+		.init.data_high = PIN1 | PIN2,
+		.assert_srst.data_high     = ~PIN1,
+		.assert_srst.ddr_high      =  PIN1,
+		.deassert_srst.data_high   =  PIN1,
+		.deassert_srst.ddr_high    = ~PIN1,
+		.mpsse_swd_read.clr_data_low  = PIN5 | PIN6,
+		.mpsse_swd_write.set_data_low = PIN5,
+		.mpsse_swd_write.clr_data_low = PIN6,
+		.jtag.set_data_low            = PIN6,
+		.target_voltage_cmd  = GET_BITS_HIGH,
+		.target_voltage_pin  = ~PIN2,
+
+		.description = "Dual RS232-HS",
+		.name = "ftdi_jtag"
+	},
+	{
 /* UART/SWO on Interface A
  * JTAG and control on INTERFACE_B
  * Bit 5 high selects SWD-WRITE (TMS routed to MPSSE_DI)
