@@ -1,5 +1,6 @@
 CROSS_COMPILE = stm32-
 CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
 all:	stm32_opterase.bin stm32_optprog.bin

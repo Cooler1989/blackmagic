@@ -1,5 +1,7 @@
 CC ?= gcc
+CXX ?= g++:w
 SYS = $(shell $(CC) -dumpmachine)
+SYS = $(shell $(CXX) -dumpmachine)
 CFLAGS += -DENABLE_DEBUG -DPLATFORM_HAS_DEBUG
 CFLAGS +=-I ./target -I./platforms/pc
 

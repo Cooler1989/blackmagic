@@ -12,6 +12,10 @@ CFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
 	-std=gnu99 -g3 -MD -I./target \
 	-I. -Iinclude -I$(PLATFORM_DIR)
 
+CXXFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
+	-std=c++14 -g3 -MD -I./target \
+	-I. -Iinclude -I$(PLATFORM_DIR)
+
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
 endif
@@ -71,6 +75,7 @@ endif
 
 OPT_FLAGS ?= -Os
 CFLAGS += $(OPT_FLAGS)
+CXXFLAGS += $(OPT_FLAGS)
 LDFLAGS += $(OPT_FLAGS)
 
 ifndef TARGET
@@ -87,18 +92,27 @@ endif
 
 ifdef PC_HOSTED
 CFLAGS += -DPC_HOSTED=1
+CXXFLAGS += -DPC_HOSTED=1
 else
-SRC += swdptap.c jtagtap.c
+SRC += swdptap.c
+SRC_CPP +=jtagtap.cpp
 CFLAGS += -DPC_HOSTED=0
+CXXFLAGS += -DPC_HOSTED=0
 VPATH += platforms/common
 CFLAGS += -Iplatforms/common
+CXXFLAGS += -Iplatforms/common
 endif
 
 OBJ = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRC)))
+OBJ_CPP = $(patsubst %.cpp,%.o,$(SRC_CPP))
 
-$(TARGET): include/version.h $(OBJ)
+$(TARGET): include/version.h $(OBJ) $(OBJ_CPP)
 	@echo "  LD      $@"
 	$(Q)$(CC) -o $@ $(OBJ) $(LDFLAGS)
+
+%.o:	%.cpp
+	@echo "  CXX     $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %.o:	%.c
 	@echo "  CC      $<"

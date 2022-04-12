@@ -23,10 +23,10 @@
 #include <stdio.h>
 
 #include "general.h"
-#include "jtagtap.h"
+#include "jtagtap.hpp"
 #include "gdb_packet.h"
 
-jtag_proc_t jtag_proc;
+extern "C" jtag_proc_t jtag_proc;
 
 static void jtagtap_reset(void);
 static void jtagtap_tms_seq(uint32_t MS, int ticks);
