@@ -42,6 +42,8 @@
 #include "target_internal.h"
 #include "cortexm.h"
 
+#include <alloca.h>
+
 #define RP_ID "Raspberry RP2040"
 #define BOOTROM_MAGIC ('M' | ('u' << 8) | (0x01 << 16))
 #define BOOTROM_MAGIC_ADDR 0x00000010
@@ -296,7 +298,7 @@ static int rp_flash_write(struct target_flash *f,
 			break;
 		}
 		len -= chunksize;
-		src += chunksize;
+		src = reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(src) + chunksize);
 		dest += chunksize;
 	}
 	rp_flash_resume(t);
@@ -340,7 +342,7 @@ const struct command_s rp_cmd_list[] = {
 
 static void rp_add_flash(target *t, uint32_t addr, size_t length)
 {
-        struct target_flash *f = calloc(1, sizeof(*f));
+        struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
         if (!f) {                       /* calloc failed: heap exhaustion */
                 DEBUG_WARN("calloc: failed in %s\n", __func__);
                 return;
@@ -368,11 +370,11 @@ bool rp_probe(target *t)
 		DEBUG_WARN("Old Bootrom Version 1!\n");
 #endif
 #define RP_MAX_TABLE_SIZE  0x80
-	uint16_t *table =  alloca(RP_MAX_TABLE_SIZE);
+	uint16_t *table =  static_cast<uint16_t*>(alloca(RP_MAX_TABLE_SIZE));
 	uint16_t table_offset = target_mem_read32( t, BOOTROM_MAGIC_ADDR + 4);
 	if (!table || target_mem_read(t, table, table_offset, RP_MAX_TABLE_SIZE))
 		return false;
-	struct rp_priv_s *priv_storage = calloc(1, sizeof(struct rp_priv_s));
+	struct rp_priv_s *priv_storage = static_cast<rp_priv_s*>(calloc(1, sizeof(struct rp_priv_s)));
 	if (!priv_storage) {               /* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return false;
@@ -423,6 +425,8 @@ static bool rp_rescue_do_reset(target *t)
 	return false;
 }
 
+typedef bool(*rp_rescue_do_reset_t)(target*);
+
 /* The RP Pico rescue DP provides no AP, so we need special handling
  *
  * Attach to this DP will do the reset, but will fail to attach!
@@ -434,9 +438,11 @@ void rp_rescue_probe(ADIv5_AP_t *ap)
 		return;
 	}
 
+        typedef void(*adiv5_ap_unref_t)(void*);
+
 	adiv5_ap_ref(ap);
-	t->attach = (void*)rp_rescue_do_reset;
+	t->attach = reinterpret_cast<rp_rescue_do_reset_t>((void*)rp_rescue_do_reset);
 	t->priv = ap;
-	t->priv_free = (void*)adiv5_ap_unref;
+	t->priv_free = reinterpret_cast<adiv5_ap_unref_t>(adiv5_ap_unref);
 	t->driver = "Raspberry RP2040 Rescue(Attach to reset!)";
 }

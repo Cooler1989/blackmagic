@@ -223,7 +223,7 @@ void gdb_putpacket_f(const char *fmt, ...)
 void gdb_out(const char *buf)
 {
 	int l = strlen(buf);
-	char *hexdata = calloc(1, 2 * l + 1);
+	char *hexdata = static_cast<char*>(calloc(1, 2 * l + 1));
 	if (!hexdata)
 		return;
 	hexify(hexdata, buf, l);

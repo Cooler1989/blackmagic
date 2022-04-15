@@ -233,7 +233,7 @@ void jtag_dev_write_ir(jtag_proc_t *jp, uint8_t jd_index, uint32_t ir)
 
 	jtagtap_shift_ir();
 	jp->jtagtap_tdi_seq(0, ones, d->ir_prescan);
-	jp->jtagtap_tdi_seq(d->ir_postscan?0:1, (void*)&ir, d->ir_len);
+	jp->jtagtap_tdi_seq(d->ir_postscan?0:1, (const uint8_t*)&ir, d->ir_len);
 	jp->jtagtap_tdi_seq(1, ones, d->ir_postscan);
 	jtagtap_return_idle();
 }
@@ -244,9 +244,9 @@ void jtag_dev_shift_dr(jtag_proc_t *jp, uint8_t jd_index, uint8_t *dout, const u
 	jtagtap_shift_dr();
 	jp->jtagtap_tdi_seq(0, ones, d->dr_prescan);
 	if(dout)
-		jp->jtagtap_tdi_tdo_seq((void*)dout, d->dr_postscan?0:1, (void*)din, ticks);
+		jp->jtagtap_tdi_tdo_seq((uint8_t*)dout, d->dr_postscan?0:1, (const uint8_t*)din, ticks);
 	else
-		jp->jtagtap_tdi_seq(d->dr_postscan?0:1, (void*)din, ticks);
+		jp->jtagtap_tdi_seq(d->dr_postscan?0:1, (const uint8_t*)din, ticks);
 	jp->jtagtap_tdi_seq(1, ones, d->dr_postscan);
 	jtagtap_return_idle();
 }

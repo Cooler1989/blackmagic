@@ -34,6 +34,8 @@
 #include "version.h"
 #include "serialno.h"
 
+#include <alloca.h>
+
 #ifdef PLATFORM_HAS_TRACESWO
 #	include "traceswo.h"
 #endif
@@ -105,7 +107,7 @@ int command_process(target *t, char *cmd)
 	for(char *s = cmd; *s; s++)
 		if((*s == ' ') || (*s == '\t')) argc++;
 
-	argv = alloca(sizeof(const char *) * argc);
+	argv = static_cast<const char**>(alloca(sizeof(const char *) * argc));
 
 	/* Tokenize cmd to find argv */
 	argc = 0;

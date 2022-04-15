@@ -126,10 +126,26 @@ static void _respondS(char respCode, const char *s)
 }
 
 static ADIv5_DP_t remote_dp = {
+        .refcnt = 0,
+	.idcode = 0,
+	.targetid = 0,
+
+	.seq_out = nullptr,
+	.seq_out_parity = nullptr,
+	.seq_in = nullptr,
+	.seq_in_parity = nullptr,
+	.dp_low_write = nullptr,
+	.dp_read = nullptr,
+	.error = nullptr,
+	.low_access = nullptr,
+	.abort = nullptr,
+
 	.ap_read = firmware_ap_read,
 	.ap_write = firmware_ap_write,
 	.mem_read = firmware_mem_read,
 	.mem_write_sized = firmware_mem_write_sized,
+	.dp_jd_index = 0,
+	.fault = 0,
 };
 
 
@@ -225,7 +241,7 @@ static void remotePacketProcessJTAG(unsigned i, char *packet)
 		} else {
 			ticks=remotehston(2,&packet[2]);
 			DI=remotehston(-1,&packet[4]);
-			jtag_proc.jtagtap_tdi_tdo_seq((void *)&DO, (packet[1]==REMOTE_TDITDO_TMS), (void *)&DI, ticks);
+			jtag_proc.jtagtap_tdi_tdo_seq((uint8_t *)&DO, (packet[1]==REMOTE_TDITDO_TMS), (const uint8_t *)&DI, ticks);
 
 			/* Mask extra bits on return value... */
 			if (ticks < 64)
@@ -353,18 +369,28 @@ static void remotePacketProcessHL(unsigned i, char *packet)
 	packet += 2;
 	remote_ap.apsel = remotehston(2, packet);
 	remote_ap.dp = &remote_dp;
+
+        uint16_t addr16;
+        uint32_t data;
+        uint32_t value;
+        uint32_t address;
+        uint32_t count;
+        enum align align;
+        uint32_t dest;
+        size_t len;
+
 	switch (index) {
 	case REMOTE_DP_READ:  /* Hd = Read from DP register */
 		packet += 2;
-		uint16_t addr16 = remotehston(4, packet);
-		uint32_t data = adiv5_dp_read(&remote_dp, addr16);
+		addr16 = remotehston(4, packet);
+		data = adiv5_dp_read(&remote_dp, addr16);
 		_respond_buf(REMOTE_RESP_OK, (uint8_t*)&data, 4);
 		break;
 	case REMOTE_LOW_ACCESS: /* HL = Low level access */
 		packet += 2;
 		addr16 = remotehston(4, packet);
 		packet += 4;
-		uint32_t value = remotehston(8, packet);
+		value = remotehston(8, packet);
 		data = remote_dp.low_access(&remote_dp, remote_ap.apsel, addr16, value);
 		_respond_buf(REMOTE_RESP_OK, (uint8_t*)&data, 4);
 		break;
@@ -389,13 +415,13 @@ static void remotePacketProcessHL(unsigned i, char *packet)
 		/*fall through*/
 	case REMOTE_MEM_READ:   /* Hh = Read from Mem */
 		packet += 2;
-		uint32_t address = remotehston(8, packet);
+		address = remotehston(8, packet);
 		packet += 8;
-		uint32_t count = remotehston(8, packet);
+		count = remotehston(8, packet);
 		packet += 8;
 		adiv5_mem_read(&remote_ap, src, address, count);
 		if (remote_ap.dp->fault == 0) {
-			_respond_buf(REMOTE_RESP_OK, src, count);
+			_respond_buf(REMOTE_RESP_OK, (uint8_t*)src, count);
 			break;
 		}
 		_respond(REMOTE_RESP_ERR, 0);
@@ -408,11 +434,11 @@ static void remotePacketProcessHL(unsigned i, char *packet)
 		/*fall through*/
 	case REMOTE_MEM_WRITE_SIZED: /* HH = Write to memory*/
 		packet += 2;
-		enum align align = remotehston(2, packet);
+		align = static_cast<enum align>(remotehston(2, packet));
 		packet += 2;
-		uint32_t dest = remotehston(8, packet);
+		dest = remotehston(8, packet);
 		packet+= 8;
-		size_t len = remotehston(8, packet);
+		len = remotehston(8, packet);
 		packet += 8;
 		if (len & ((1 << align) - 1)) {
 			/* len  and align do not fit*/

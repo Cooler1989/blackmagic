@@ -41,7 +41,7 @@ static uint32_t adiv5_jtagdp_error(ADIv5_DP_t *dp);
 
 void adiv5_jtag_dp_handler(uint8_t jd_index)
 {
-	ADIv5_DP_t *dp = (void*)calloc(1, sizeof(*dp));
+	ADIv5_DP_t *dp = (ADIv5_DP_t*)(void*)calloc(1, sizeof(*dp));
 	if (!dp) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;

@@ -64,7 +64,7 @@ extern struct exception *innermost_exception;
 	(e).type = 0; \
 	(e).mask = (type_mask); \
 	(e).outer = innermost_exception; \
-	innermost_exception = (void*)&(e); \
+	innermost_exception = (struct exception*)&(e); \
 	if (setjmp(innermost_exception->jmpbuf) == 0) \
 		for (;innermost_exception == &(e); innermost_exception = (e).outer)
 

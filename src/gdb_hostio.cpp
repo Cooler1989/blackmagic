@@ -41,7 +41,7 @@ int hostio_reply(struct target_controller *tc, char *pbuf, int len)
 
 	/* if break is requested */
 	tc->interrupted = items == 3 && c == 'C';
-	tc->errno_ = errno_;
+	tc->errno_ = static_cast<target_errno>(errno_);
 
 	return retcode;
 }

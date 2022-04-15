@@ -29,7 +29,7 @@ static const char hexdigits[] = "0123456789abcdef";
 char * hexify(char *hex, const void *buf, size_t size)
 {
 	char *tmp = hex;
-	const uint8_t *b = buf;
+	const uint8_t *b = static_cast<const uint8_t*>(buf);
 
 	while (size--) {
 		*tmp++ = hexdigits[*b >> 4];
@@ -52,11 +52,11 @@ static uint8_t unhex_digit(char hex)
 
 char * unhexify(void *buf, const char *hex, size_t size)
 {
-	uint8_t *b = buf;
+	uint8_t *b = static_cast<uint8_t*>(buf);
 	while (size--) {
 		*b = unhex_digit(*hex++) << 4;
 		*b++ |= unhex_digit(*hex++);
 	}
-	return buf;
+	return static_cast<char*>(buf);
 }
 

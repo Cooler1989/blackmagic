@@ -36,6 +36,8 @@
 #include "crc32.h"
 #include "morse.h"
 
+#include <alloca.h>
+
 enum gdb_signal {
 	GDB_SIGINT = 2,
 	GDB_SIGTRAP = 5,
@@ -96,6 +98,8 @@ static struct target_controller gdb_controller = {
 	.gettimeofday = hostio_gettimeofday,
 	.isatty = hostio_isatty,
 	.system = hostio_system,
+	.errno_{},
+	.interrupted{},
 };
 
 int gdb_main_loop(struct target_controller *tc, bool in_syscall)
@@ -355,7 +359,7 @@ static void exec_q_rcmd(const char *packet,int len)
 
 	/* calculate size and allocate buffer for command */
 	datalen = len / 2;
-	data = alloca(datalen + 1);
+	data = static_cast<char*>(alloca(datalen + 1));
 	/* dehexify command */
 	unhexify(data, packet, datalen);
 	data[datalen] = 0;	/* add terminating null */
@@ -564,7 +568,7 @@ handle_v_packet(char *packet, int plen)
 		/* Write Flash Memory */
 		len = plen - bin;
 		DEBUG_GDB("Flash Write %08lX %08lX\n", addr, len);
-		if (cur_target && target_flash_write(cur_target, addr, (void*)packet + bin, len) == 0)
+		if (cur_target && target_flash_write(cur_target, addr, (void*)reinterpret_cast<uintptr_t>(packet + bin), len) == 0)
 			gdb_putpacketz("OK");
 		else {
 			flash_mode = 0;
@@ -594,9 +598,9 @@ handle_z_packet(char *packet, int plen)
 
 	sscanf(packet, "%*[zZ]%d,%08" PRIX32 ",%d", &type, &addr, &len);
 	if(set)
-		ret = target_breakwatch_set(cur_target, type, addr, len);
+		ret = target_breakwatch_set(cur_target, static_cast<target_breakwatch>(type), addr, len);
 	else
-		ret = target_breakwatch_clear(cur_target, type, addr, len);
+		ret = target_breakwatch_clear(cur_target, static_cast<target_breakwatch>(type), addr, len);
 
 	if (ret < 0)
 		gdb_putpacketz("E01");

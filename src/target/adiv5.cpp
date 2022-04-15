@@ -634,7 +634,7 @@ ADIv5_AP_t *adiv5_new_ap(ADIv5_DP_t *dp, uint8_t apsel)
 	}
 
 	/* It's valid to so create a heap copy */
-	ap = malloc(sizeof(*ap));
+	ap = static_cast<ADIv5_AP_t*>(malloc(sizeof(*ap)));
 	if (!ap) {			/* malloc failed: heap exhaustion */
 		DEBUG_WARN("malloc: failed in %s\n", __func__);
 		return NULL;
@@ -656,7 +656,7 @@ ADIv5_AP_t *adiv5_new_ap(ADIv5_DP_t *dp, uint8_t apsel)
 /* No real AP on RP2040. Special setup.*/
 static void rp_rescue_setup(ADIv5_DP_t *dp)
 {
-	ADIv5_AP_t *ap = malloc(sizeof(*ap));
+	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(malloc(sizeof(*ap)));
 	if (!ap) {			/* malloc failed: heap exhaustion */
 		DEBUG_WARN("malloc: failed in %s\n", __func__);
 		return;
