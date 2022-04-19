@@ -104,7 +104,7 @@ struct kinetis_flash {
 static void kl_gen_add_flash(target *t, uint32_t addr, size_t length,
                              size_t erasesize, size_t write_len)
 {
-	struct kinetis_flash *kf = calloc(1, sizeof(*kf));
+	struct kinetis_flash *kf = static_cast<kinetis_flash*>(calloc(1, sizeof(*kf)));
 	struct target_flash *f;
 
 	if (!kf) {			/* calloc failed: heap exhaustion */
@@ -451,13 +451,13 @@ static int kl_gen_flash_write(struct target_flash *f,
 	}
 
 	while (len) {
-		if (kl_gen_command(f->t, write_cmd, dest, src, 1)) {
+		if (kl_gen_command(f->t, write_cmd, dest, static_cast<const uint32_t*>(src), 1)) {
 			if (len > kf->write_len)
 				len -= kf->write_len;
 			else
 				len = 0;
 			dest += kf->write_len;
-			src += kf->write_len;
+			src = reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(src) + kf->write_len);
 		} else {
 			return 1;
 		}
@@ -541,7 +541,7 @@ void kinetis_mdm_probe(ADIv5_AP_t *ap)
 
 	adiv5_ap_ref(ap);
 	t->priv = ap;
-	t->priv_free = (void*)adiv5_ap_unref;
+	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
 
 	t->driver = "Kinetis Recovery (MDM-AP)";
 	t->regs_size = 4;
@@ -573,7 +573,7 @@ static bool kinetis_mdm_cmd_erase_mass(target *t, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
-	ADIv5_AP_t *ap = t->priv;
+	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(t->priv);
 
 	/* Keep the MCU in reset as stated in KL25PxxM48SF0RM */
 	if(t->ke04_mode)
@@ -582,7 +582,7 @@ static bool kinetis_mdm_cmd_erase_mass(target *t, int argc, const char **argv)
 	uint32_t status, control;
 	status = adiv5_ap_read(ap, MDM_STATUS);
 	control = adiv5_ap_read(ap, MDM_CONTROL);
-	tc_printf(t, "Requesting mass erase (status = 0x%"PRIx32")\n", status);
+	tc_printf(t, "Requesting mass erase (status = 0x%" PRIx32 ")\n", status);
 
 	/* This flag does not exist on KE04 */
 	if (!(status & MDM_STATUS_MASS_ERASE_ENABLED) && !t->ke04_mode) {

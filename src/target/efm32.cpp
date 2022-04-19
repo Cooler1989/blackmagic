@@ -270,11 +270,11 @@ typedef struct efm32_device_t {
 	uint8_t family_id;	/* Family for device matching */
 	bool has_radio;		   /* Indicates a device has attached radio */
 	uint16_t flash_page_size;	/* Flash page size */
-	char* name;			/* Friendly device family name */
+	const char* name;			/* Friendly device family name */
 	uint32_t msc_addr;			/* MSC Address */
 	uint16_t user_data_size;	/* User Data (UD) region size */
 	uint16_t bootloader_size;	/* Bootloader (BL) region size (may be 0 for no BL region) */
-	char* description;	   /* Human-readable description */
+	const char* description;	   /* Human-readable description */
 } efm32_device_t;
 
 efm32_device_t const efm32_devices[] = {
@@ -349,7 +349,7 @@ typedef struct efm32_v2_di_miscchip_t {
 /* pkgtype */
 typedef struct efm32_v2_di_pkgtype_t {
 	uint8_t pkgtype;
-	char* name;
+	const char* name;
 } efm32_v2_di_pkgtype_t;
 
 efm32_v2_di_pkgtype_t const efm32_v2_di_pkgtypes[] = {
@@ -362,7 +362,7 @@ efm32_v2_di_pkgtype_t const efm32_v2_di_pkgtypes[] = {
 /* tempgrade */
 typedef struct efm32_v2_di_tempgrade_t {
 	uint8_t tempgrade;
-	char* name;
+	const char* name;
 } efm32_v2_di_tempgrade_t;
 
 efm32_v2_di_tempgrade_t const efm32_v2_di_tempgrades[] = {
@@ -541,7 +541,7 @@ static efm32_v2_di_miscchip_t efm32_v2_read_miscchip(target *t, uint8_t di_versi
 static void efm32_add_flash(target *t, target_addr addr, size_t length,
 			    size_t page_size)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -639,7 +639,7 @@ bool efm32_probe(target *t)
 	uint32_t ram_size   = ram_kib   * 0x400;
 	uint32_t flash_page_size = device->flash_page_size;
 
-	struct efm32_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct efm32_priv_s *priv_storage = static_cast<efm32_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	t->target_storage = (void*)priv_storage;
 
 	snprintf(priv_storage->efm32_variant_string,
@@ -731,7 +731,7 @@ static int efm32_flash_write(struct target_flash *f,
 	/* Check the MSC_IF */
 	uint32_t msc = device->msc_addr;
 	uint32_t msc_if = target_mem_read32(t, EFM32_MSC_IF(msc));
-	DEBUG_INFO("EFM32: Flash write done MSC_IF=%08"PRIx32"\n", msc_if);
+	DEBUG_INFO("EFM32: Flash write done MSC_IF=%08" PRIx32 "\n", msc_if);
 #endif
 	return ret;
 }
@@ -1002,14 +1002,14 @@ void efm32_aap_probe(ADIv5_AP_t *ap)
 	target *t = target_new();
 	adiv5_ap_ref(ap);
 	t->priv = ap;
-	t->priv_free = (void*)adiv5_ap_unref;
+	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
 
 	//efm32_aap_cmd_device_erase(t);
 
 	/* Read status */
-	DEBUG_INFO("EFM32: AAP STATUS=%08"PRIx32"\n", adiv5_ap_read(ap, AAP_STATUS));
+	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", adiv5_ap_read(ap, AAP_STATUS));
 
-	struct efm32_aap_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct efm32_aap_priv_s *priv_storage = static_cast<efm32_aap_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	sprintf(priv_storage->aap_driver_string,
 			"EFM32 Authentication Access Port rev.%d",
 			aap_revision);
@@ -1023,12 +1023,12 @@ static bool efm32_aap_cmd_device_erase(target *t, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
-	ADIv5_AP_t *ap = t->priv;
+	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(t->priv);
 	uint32_t status;
 
 	/* Read status */
 	status = adiv5_ap_read(ap, AAP_STATUS);
-	DEBUG_INFO("EFM32: AAP STATUS=%08"PRIx32"\n", status);
+	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", status);
 
 	if (status & AAP_STATUS_ERASEBUSY) {
 		DEBUG_WARN("EFM32: AAP Erase in progress\n");
@@ -1047,7 +1047,7 @@ static bool efm32_aap_cmd_device_erase(target *t, int argc, const char **argv)
 
 	/* Read status */
 	status = adiv5_ap_read(ap, AAP_STATUS);
-	DEBUG_INFO("EFM32: AAP STATUS=%08"PRIx32"\n", status);
+	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", status);
 
 	return true;
 }

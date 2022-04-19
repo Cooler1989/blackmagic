@@ -276,7 +276,7 @@ static bool lpc546xx_cmd_write_sector(target *t, int argc, const char *argv[])
 			return retval;
 		}
 
-		uint8_t *buf = calloc(1, sector_size);
+		uint8_t *buf = static_cast<uint8_t*>(calloc(1, sector_size));
 		for (uint32_t i = 0; i < sector_size; i++) {
 			buf[i] = i & 0xff;
 		}

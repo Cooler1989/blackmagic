@@ -196,5 +196,5 @@ lpc17xx_iap_call(target *t, struct flash_param *param, enum iap_cmd cmd, ...) {
 
 	/* copy back just the parameters structure */
 	target_mem_read(t, (void *)param, IAP_RAM_BASE, sizeof(struct flash_param));
-	return param->result[0];
+	return static_cast<iap_status>(param->result[0]);
 }

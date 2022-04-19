@@ -33,7 +33,7 @@ struct flash_param {
 	uint32_t result[4];
 } __attribute__((aligned(4)));
 
-char *iap_error[] = {
+const char *iap_error[] = {
 	"CMD_SUCCESS",
 	"Invalid command",
 	"Unaligned src address",
@@ -75,7 +75,7 @@ static int lpc_flash_write(struct target_flash *tf,
 
 struct lpc_flash *lpc_add_flash(target *t, target_addr addr, size_t length)
 {
-	struct lpc_flash *lf = calloc(1, sizeof(*lf));
+	struct lpc_flash *lf = static_cast<lpc_flash*>(calloc(1, sizeof(*lf)));
 	struct target_flash *f;
 
 	if (!lf) {			/* calloc failed: heap exhaustion */
@@ -98,8 +98,12 @@ enum iap_status lpc_iap_call(struct lpc_flash *f, void *result, enum iap_cmd cmd
 	target *t = f->f.t;
 	struct flash_param param = {
 		.opcode = ARM_THUMB_BREAKPOINT,
+                .pad0 = {},
 		.command = cmd,
-	};
+                .words = {},
+                .status = 0,
+                .result = {}
+        };
 
 	/* Pet WDT before each IAP call, if it is on */
 	if (f->wdt_kick)
@@ -159,7 +163,7 @@ enum iap_status lpc_iap_call(struct lpc_flash *f, void *result, enum iap_cmd cmd
 				   param.result[1], param.result[2], param.result[3]);
 	}
 #endif
-	return param.status;
+	return static_cast<iap_status>(param.status);
 }
 
 static uint8_t lpc_sector_for_addr(struct lpc_flash *f, uint32_t addr)

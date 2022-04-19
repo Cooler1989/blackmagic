@@ -236,7 +236,7 @@ bool ke04_probe(target *t)
 	target_add_ram(t, RAM_BASE_ADDR, ramsize);           /* Higher RAM */
 
 	/* Add flash, all KE04 have same write and erase size */
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return false;
@@ -350,10 +350,10 @@ static int ke04_flash_write(struct target_flash *f,
 	}
 
 	while (len) {
-		if (ke04_command(f->t, CMD_PROGRAM_FLASH, dest, src)) {
+		if (ke04_command(f->t, CMD_PROGRAM_FLASH, dest, static_cast<const uint8_t*>(src))) {
 			len  -= KE04_WRITE_LEN;
 			dest += KE04_WRITE_LEN;
-			src  += KE04_WRITE_LEN;
+			src  = reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(src) + KE04_WRITE_LEN);
 		} else {
 			return 1;
 		}

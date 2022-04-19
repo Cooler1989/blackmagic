@@ -168,7 +168,7 @@ static const size_t __nvp_size[16] = {
  */
 static void sam4l_add_flash(target *t, uint32_t addr, size_t length)
 {
-	struct target_flash *f = calloc(1, sizeof(struct target_flash));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(struct target_flash)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;

@@ -37,6 +37,8 @@
 #define IR_DPACC	0xA
 #define IR_APACC	0xB
 
+extern jtag_proc_t jtag_proc;
+
 static uint32_t adiv5_jtagdp_error(ADIv5_DP_t *dp);
 
 void adiv5_jtag_dp_handler(uint8_t jd_index)

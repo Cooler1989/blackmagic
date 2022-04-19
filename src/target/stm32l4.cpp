@@ -216,116 +216,134 @@ struct stm32l4_info {
 
 static struct stm32l4_info const L4info[] = {
 	{
-		.idcode = ID_STM32L41,
-		.family = FAM_STM32L4xx,
 		.designator = "STM32L41x",
 		.sram1 = 32,
 		.sram2 = 8,
-		.flags = 2,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32L43,
+		.sram3 = {},
+		.idcode = ID_STM32L41,
 		.family = FAM_STM32L4xx,
-		.designator = "STM32L43x",
-		.sram1 = 48,
-		.sram2 = 16,
 		.flags = 2,
 		.flash_regs_map = stm32l4_flash_regs_map,
 	},
+    	{
+    		.designator = "STM32L43x",
+    		.sram1 = 48,
+    		.sram2 = 16,
+                .sram3 = {},
+    		.idcode = ID_STM32L43,
+    		.family = FAM_STM32L4xx,
+    		.flags = 2,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32L45x",
+    		.sram1 = 128,
+    		.sram2 = 32,
+                .sram3 = {},
+    		.idcode = ID_STM32L45,
+    		.family = FAM_STM32L4xx,
+    		.flags = 2,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32L47x",
+    		.sram1 = 96,
+    		.sram2 = 32,
+                .sram3 = {},
+    		.idcode = ID_STM32L47,
+    		.family = FAM_STM32L4xx,
+    		.flags = 2 | DUAL_BANK,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32L49x",
+    		.sram1 = 256,
+    		.sram2 = 64,
+                .sram3 = {},
+    		.idcode = ID_STM32L49,
+    		.family = FAM_STM32L4xx,
+    		.flags = 2 | DUAL_BANK,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32L4Rx",
+    		.sram1 = 192,
+    		.sram2 = 64,
+    		.sram3 = 384,
+    		.idcode = ID_STM32L4R,
+    		.family = FAM_STM32L4Rx,
+    		.flags = 3 | DUAL_BANK,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32G43\0",
+    		.sram1 = 22,
+    		.sram2 = 10,
+                .sram3 = {},
+    		.idcode = ID_STM32G43,
+    		.family = FAM_STM32G4xx,
+                .flags = 0,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32G47\0",
+    		.sram1 = 96, /* SRAM1 and SRAM2 are mapped continuous */
+    		.sram2 = 32, /* CCM SRAM is mapped as per SRAM2 on G4 */
+                .sram3 = {},
+    		.idcode = ID_STM32G47,
+    		.family = FAM_STM32G4xx,
+    		.flags = 2,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32G49\0",
+    		.sram1 = 96, /* SRAM1 and SRAM2 are mapped continuously */
+    		.sram2 = 16, /* CCM SRAM is mapped as per SRAM2 on G4 */
+                .sram3 = {},
+    		.idcode = ID_STM32G49,
+    		.family = FAM_STM32G4xx,
+    		.flags = 2,
+    		.flash_regs_map = stm32l4_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32L55\0",
+    		.sram1 = 192, /* SRAM1 and SRAM2 are mapped continuous */
+    		.sram2 =  64,
+                .sram3 = {},
+    		.idcode = ID_STM32L55,
+    		.family = FAM_STM32L55x,
+    		.flags = 2,
+    		.flash_regs_map = stm32l5_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32WLxx",
+    		.sram1 = 64,
+    		.sram2 = 32,
+                .sram3 = {},
+    		.idcode = ID_STM32WLXX,
+    		.family = FAM_STM32WLxx,
+    		.flags = 2,
+    		.flash_regs_map = stm32wl_flash_regs_map,
+    	},
+    	{
+    		.designator = "STM32WBxx",
+    		.sram1 = 192,
+    		.sram2 = 64,
+                .sram3 = {},
+    		.idcode = ID_STM32WBXX,
+    		.family = FAM_STM32WBxx,
+    		.flags = 2,
+    		.flash_regs_map = stm32wb_flash_regs_map,
+    	},
 	{
-		.idcode = ID_STM32L45,
-		.family = FAM_STM32L4xx,
-		.designator = "STM32L45x",
-		.sram1 = 128,
-		.sram2 = 32,
-		.flags = 2,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32L47,
-		.family = FAM_STM32L4xx,
-		.designator = "STM32L47x",
-		.sram1 = 96,
-		.sram2 = 32,
-		.flags = 2 | DUAL_BANK,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32L49,
-		.family = FAM_STM32L4xx,
-		.designator = "STM32L49x",
-		.sram1 = 256,
-		.sram2 = 64,
-		.flags = 2 | DUAL_BANK,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32L4R,
-		.family = FAM_STM32L4Rx,
-		.designator = "STM32L4Rx",
-		.sram1 = 192,
-		.sram2 = 64,
-		.sram3 = 384,
-		.flags = 3 | DUAL_BANK,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32G43,
-		.family = FAM_STM32G4xx,
-		.designator = "STM32G43",
-		.sram1 = 22,
-		.sram2 = 10,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32G47,
-		.family = FAM_STM32G4xx,
-		.designator = "STM32G47",
-		.sram1 = 96, /* SRAM1 and SRAM2 are mapped continuous */
-		.sram2 = 32, /* CCM SRAM is mapped as per SRAM2 on G4 */
-		.flags = 2,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32G49,
-		.family = FAM_STM32G4xx,
-		.designator = "STM32G49",
-		.sram1 = 96, /* SRAM1 and SRAM2 are mapped continuously */
-		.sram2 = 16, /* CCM SRAM is mapped as per SRAM2 on G4 */
-		.flags = 2,
-		.flash_regs_map = stm32l4_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32L55,
-		.family = FAM_STM32L55x,
-		.designator = "STM32L55",
-		.sram1 = 192, /* SRAM1 and SRAM2 are mapped continuous */
-		.sram2 =  64,
-		.flags = 2,
-		.flash_regs_map = stm32l5_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32WLXX,
-		.family = FAM_STM32WLxx,
-		.designator = "STM32WLxx",
-		.sram1 = 64,
-		.sram2 = 32,
-		.flags = 2,
-		.flash_regs_map = stm32wl_flash_regs_map,
-	},
-	{
-		.idcode = ID_STM32WBXX,
-		.family = FAM_STM32WBxx,
-		.designator = "STM32WBxx",
-		.sram1 = 192,
-		.sram2 = 64,
-		.flags = 2,
-		.flash_regs_map = stm32wb_flash_regs_map,
-	},
-	{
-		/* Terminator */
-		.idcode = 0,
+		.designator = {},
+		.sram1 = {},
+		.sram2 = {},
+		.sram3 = {},
+		.idcode = {},
+		.family = {},
+		.flags = {},
+		.flash_regs_map = {},
 	},
 };
 
@@ -363,7 +381,7 @@ static void stm32l4_add_flash(target *t,
                               uint32_t addr, size_t length, size_t blocksize,
                               uint32_t bank1_start)
 {
-	struct stm32l4_flash *sf = calloc(1, sizeof(*sf));
+	struct stm32l4_flash *sf = static_cast<stm32l4_flash*>(calloc(1, sizeof(*sf)));
 	struct target_flash *f;
 
 	if (!sf) {			/* calloc failed: heap exhaustion */
@@ -414,7 +432,7 @@ static bool stm32l4_attach(target *t)
 		break;
 	}
 	/* Save DBGMCU_CR to restore it when detaching*/
-	struct stm32l4_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct stm32l4_priv_s *priv_storage = static_cast<stm32l4_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	priv_storage->dbgmcu_cr = target_mem_read32(t, DBGMCU_CR(idcodereg));
 	t->target_storage = (void*)priv_storage;
 

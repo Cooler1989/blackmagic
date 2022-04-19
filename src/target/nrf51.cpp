@@ -99,7 +99,7 @@ const struct command_s nrf51_read_cmd_list[] = {
 static void nrf51_add_flash(target *t,
                             uint32_t addr, size_t length, size_t erasesize)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -427,7 +427,7 @@ void nrf51_mdm_probe(ADIv5_AP_t *ap)
 
 	adiv5_ap_ref(ap);
 	t->priv = ap;
-	t->priv_free = (void*)adiv5_ap_unref;
+	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
 
 	uint32_t status = adiv5_ap_read(ap, MDM_PROT_EN);
 	status = adiv5_ap_read(ap, MDM_PROT_EN);
@@ -443,7 +443,7 @@ static bool nrf51_mdm_cmd_erase_mass(target *t, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
-	ADIv5_AP_t *ap = t->priv;
+	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(t->priv);
 
 	uint32_t status = adiv5_ap_read(ap, MDM_STATUS);
 

@@ -69,14 +69,13 @@ int adiv5_swdp_scan(uint32_t targetid)
 {
 	volatile struct exception e;
 	target_list_free();
-	ADIv5_DP_t idp = {
-		.dp_low_write = firmware_dp_low_write,
-		.error = firmware_swdp_error,
-		.dp_read = firmware_swdp_read,
-		.low_access = firmware_swdp_low_access,
-		.abort = firmware_swdp_abort,
-	};
-	ADIv5_DP_t *initial_dp = &idp;
+	ADIv5_DP_t idp = {};
+        idp.dp_low_write = firmware_dp_low_write;
+        idp.error = firmware_swdp_error;
+        idp.dp_read = firmware_swdp_read;
+        idp.low_access = firmware_swdp_low_access;
+        idp.abort = firmware_swdp_abort;
+        ADIv5_DP_t *initial_dp = &idp;
 	if (swdptap_init(initial_dp))
 		return -1;
 	/* DORMANT-> SWD sequence*/
@@ -160,7 +159,7 @@ int adiv5_swdp_scan(uint32_t targetid)
 		} else {
 			dp_targetid = target_id;
 		}
-		ADIv5_DP_t *dp = (void*)calloc(1, sizeof(*dp));
+		ADIv5_DP_t *dp = static_cast<ADIv5_DP_t*>(calloc(1, sizeof(*dp)));
 		if (!dp) {			/* calloc failed: heap exhaustion */
 			DEBUG_WARN("calloc: failed in %s\n", __func__);
 			continue;

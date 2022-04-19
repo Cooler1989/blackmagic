@@ -94,8 +94,8 @@ ifdef PC_HOSTED
 CFLAGS += -DPC_HOSTED=1
 CXXFLAGS += -DPC_HOSTED=1
 else
-SRC += swdptap.c
-SRC_CPP +=jtagtap.cpp
+SRC += swdptap.c jtagtap.c
+#SRC_CPP +=jtagtap.cpp
 CFLAGS += -DPC_HOSTED=0
 CXXFLAGS += -DPC_HOSTED=0
 VPATH += platforms/common

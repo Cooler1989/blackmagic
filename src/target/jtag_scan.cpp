@@ -31,6 +31,8 @@
 #include "adiv5.h"
 #include "jtag_devs.h"
 
+extern jtag_proc_t jtag_proc;
+
 struct jtag_dev_s jtag_devs[JTAG_MAX_DEVS+1];
 int jtag_dev_count;
 

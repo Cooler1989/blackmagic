@@ -232,7 +232,7 @@ static uint32_t stm32lx_nvm_option_size(target *t)
 static void stm32l_add_flash(target *t,
                              uint32_t addr, size_t length, size_t erasesize)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -249,7 +249,7 @@ static void stm32l_add_flash(target *t,
 
 static void stm32l_add_eeprom(target *t, uint32_t addr, size_t length)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -604,9 +604,10 @@ static bool stm32lx_cmd_option(target* t, int argc, char** argv)
                 return true;
         }
 
+        size_t cb;
         if (argc < 2 )
                  goto usage;
-        size_t cb = strlen(argv[1]);
+        cb = strlen(argv[1]);
 
         if (argc == 2 && !strncasecmp(argv[1], "obl_launch", cb)) {
                 target_mem_write32(t, STM32Lx_NVM_PECR(nvm),

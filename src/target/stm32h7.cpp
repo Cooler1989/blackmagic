@@ -172,7 +172,7 @@ struct stm32h7_priv_s {
 static void stm32h7_add_flash(target *t,
                               uint32_t addr, size_t length, size_t blocksize)
 {
-	struct stm32h7_flash *sf = calloc(1, sizeof(*sf));
+	struct stm32h7_flash *sf = static_cast<stm32h7_flash*>(calloc(1, sizeof(*sf)));
 	struct target_flash *f;
 
 	if (!sf) {			/* calloc failed: heap exhaustion */
@@ -242,7 +242,7 @@ bool stm32h7_probe(target *t)
 		t->detach = stm32h7_detach;
 		target_add_commands(t, stm32h7_cmd_list, stm32h7_driver_str);
 		/* Save private storage */
-		struct stm32h7_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+		struct stm32h7_priv_s *priv_storage = static_cast<stm32h7_priv_s*>(calloc(1, sizeof(*priv_storage)));
 		priv_storage->dbg_cr = target_mem_read32(t, DBGMCU_CR);
 		t->target_storage = (void*)priv_storage;
 		/* RM0433 Rev 4 is not really clear, what bits are needed in DBGMCU_CR.
@@ -572,13 +572,14 @@ static bool stm32h7_cmd_rev(target *t, int argc, const char **argv)
 	uint16_t rev_id = (dbgmcu_idc >> 16) & 0xFFFF;
 	uint16_t dev_id = dbgmcu_idc & 0xFFF;
 
+        char rev;
 	/* Print device */
 	switch (dev_id) {
 	case 0x450:
 		tc_printf(t, "STM32H742/743/753/750\n");
 
 		/* Print revision */
-		char rev = '?';
+		rev = '?';
 		for (size_t i = 0;
 			 i < sizeof(stm32h7xx_revisions)/sizeof(struct stm32h7xx_rev); i++) {
 			/* Check for matching revision */

@@ -181,7 +181,7 @@ const struct command_s stm32g0_cmd_list[] = {
 static void stm32g0_add_flash(target *t, uint32_t addr, size_t length,
                               size_t blocksize)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) { /* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -248,7 +248,7 @@ bool stm32g0_probe(target *t)
 	target_add_commands(t, stm32g0_cmd_list, t->driver);
 
 	/* Save private storage */
-	struct stm32g0_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct stm32g0_priv_s *priv_storage = static_cast<stm32g0_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	priv_storage->irreversible_enabled = false;
 	t->target_storage = (void*)priv_storage;
 
@@ -354,6 +354,7 @@ static int stm32g0_flash_erase(struct target_flash *f, target_addr addr,
 
 	stm32g0_flash_unlock(t);
 
+	uint32_t flash_sr;
 	do {
 		if (!on_bank2 && (page_nb > bank1_end_page_nb)) {
 			/* Jump on bank 2 */
@@ -381,7 +382,7 @@ static int stm32g0_flash_erase(struct target_flash *f, target_addr addr,
 	} while (nb_pages_to_erase > 0U);
 
 	/* Check for error */
-	uint32_t flash_sr = target_mem_read32(t, FLASH_SR);
+	flash_sr = target_mem_read32(t, FLASH_SR);
 	if (flash_sr & FLASH_SR_ERROR_MASK) {
 		DEBUG_WARN("stm32g0 flash erase error: sr 0x%" PRIx32 "\n",
 		           flash_sr);
@@ -484,6 +485,7 @@ static bool stm32g0_cmd_erase_mass(target *t, int argc, const char **argv)
 
 	target_mem_write32(t, FLASH_CR, flash_cr);
 
+	uint16_t flash_sr;
 	/* Read FLASH_SR to poll for BSY bits */
 	while (target_mem_read32(t, FLASH_SR) & FLASH_SR_BSY_MASK) {
 		if (target_check_error(t))
@@ -491,7 +493,7 @@ static bool stm32g0_cmd_erase_mass(target *t, int argc, const char **argv)
 	}
 
 	/* Check for error */
-	uint16_t flash_sr = target_mem_read32(t, FLASH_SR);
+	flash_sr = target_mem_read32(t, FLASH_SR);
 	if (flash_sr & FLASH_SR_ERROR_MASK)
 		goto exit_error;
 	goto exit_cleanup;

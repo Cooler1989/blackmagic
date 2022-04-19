@@ -102,6 +102,8 @@ static const struct usb_endpoint_descriptor gdb_comm_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval = 255,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct usb_endpoint_descriptor gdb_data_endp[] = {{
@@ -111,6 +113,8 @@ static const struct usb_endpoint_descriptor gdb_data_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
+        .extra = nullptr,
+        .extralen = 0,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
@@ -118,6 +122,8 @@ static const struct usb_endpoint_descriptor gdb_data_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct {
@@ -184,6 +190,8 @@ static const struct usb_interface_descriptor gdb_data_iface[] = {{
 	.iInterface = 0,
 
 	.endpoint = gdb_data_endp,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct usb_iface_assoc_descriptor gdb_assoc = {
@@ -205,6 +213,8 @@ static const struct usb_endpoint_descriptor uart_comm_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval = 255,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct usb_endpoint_descriptor uart_data_endp[] = {{
@@ -214,6 +224,8 @@ static const struct usb_endpoint_descriptor uart_data_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE / 2,
 	.bInterval = 1,
+        .extra = nullptr,
+        .extralen = 0,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
@@ -221,6 +233,8 @@ static const struct usb_endpoint_descriptor uart_data_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct {
@@ -287,6 +301,8 @@ static const struct usb_interface_descriptor uart_data_iface[] = {{
 	.iInterface = 0,
 
 	.endpoint = uart_data_endp,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 static const struct usb_iface_assoc_descriptor uart_assoc = {
@@ -320,6 +336,8 @@ const struct usb_interface_descriptor dfu_iface = {
 	.bInterfaceProtocol = 1,
 	.iInterface = 6,
 
+	.endpoint = nullptr,
+
 	.extra = &dfu_function,
 	.extralen = sizeof(dfu_function),
 };
@@ -343,6 +361,8 @@ static const struct usb_endpoint_descriptor trace_endp[] = {{
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = 64,
 	.bInterval = 0,
+        .extra = nullptr,
+        .extralen = 0,
 }};
 
 const struct usb_interface_descriptor trace_iface = {
@@ -357,6 +377,8 @@ const struct usb_interface_descriptor trace_iface = {
 	.iInterface = 7,
 
 	.endpoint = trace_endp,
+        .extra = nullptr,
+        .extralen = 0,
 };
 
 static const struct usb_iface_assoc_descriptor trace_assoc = {
@@ -372,25 +394,33 @@ static const struct usb_iface_assoc_descriptor trace_assoc = {
 #endif
 
 static const struct usb_interface ifaces[] = {{
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
 	.iface_assoc = &gdb_assoc,
 	.altsetting = gdb_comm_iface,
 }, {
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
+	.iface_assoc = nullptr,
 	.altsetting = gdb_data_iface,
 }, {
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
 	.iface_assoc = &uart_assoc,
 	.altsetting = uart_comm_iface,
 }, {
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
+	.iface_assoc = nullptr,
 	.altsetting = uart_data_iface,
 }, {
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
 	.iface_assoc = &dfu_assoc,
 	.altsetting = &dfu_iface,
 #if defined(PLATFORM_HAS_TRACESWO)
 }, {
+        .cur_altsetting = nullptr,
 	.num_altsetting = 1,
 	.iface_assoc = &trace_assoc,
 	.altsetting = &trace_iface,
@@ -506,7 +536,7 @@ int cdcacm_get_dtr(void)
 static void cdcacm_set_modem_state(usbd_device *dev, int iface, bool dsr, bool dcd)
 {
 	char buf[10];
-	struct usb_cdc_notification *notif = (void*)buf;
+	struct usb_cdc_notification *notif = static_cast<usb_cdc_notification*>((void*)buf);
 	/* We echo signals back to host as notification */
 	notif->bmRequestType = 0xA1;
 	notif->bNotification = USB_CDC_NOTIFY_SERIAL_STATE;

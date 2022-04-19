@@ -329,7 +329,7 @@ struct samx5x_descr samx5x_parse_device_id(uint32_t did)
 static void samx5x_add_flash(target *t, uint32_t addr, size_t length,
 			     size_t erase_block_size, size_t write_page_size)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_INFO("calloc: failed in %s\n", __func__);
 		return;
@@ -370,13 +370,13 @@ bool samx5x_probe(target *t)
 	struct samx5x_descr samx5x = samx5x_parse_device_id(did);
 
 	/* Protected? */
-	bool protected = (ctrlstat & SAMX5X_STATUSB_PROT);
+	bool protected_ = (ctrlstat & SAMX5X_STATUSB_PROT);
 
 	/* Part String */
-	struct samx5x_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct samx5x_priv_s *priv_storage = static_cast<samx5x_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	t->target_storage = (void*)priv_storage;
 
-	if (protected) {
+	if (protected_) {
 		snprintf(priv_storage->samx5x_variant_string,
 				 sizeof(priv_storage->samx5x_variant_string),
 			 "Microchip SAM%c%d%c%dA (rev %c) (PROT=1)",
@@ -394,7 +394,7 @@ bool samx5x_probe(target *t)
 	t->driver = priv_storage->samx5x_variant_string;
 	t->reset = samx5x_reset;
 
-	if (protected) {
+	if (protected_) {
 		/**
 		 * Overload the default cortexm attach
 		 * for when the samx5x is protected.
@@ -426,7 +426,7 @@ bool samx5x_probe(target *t)
 		break;
 	}
 
-	if (protected)
+	if (protected_)
 		target_add_commands(t, samx5x_protected_cmd_list,
 				    "SAMD5x/E5x (protected)");
 	else
@@ -514,7 +514,7 @@ static int samx5x_check_nvm_error(target *t)
 
 #define NVM_ERROR_BITS_MSG						\
 	"Warning: Found NVM error bits set while preparing to %s\n"	\
-	"         flash block at 0x%08"PRIx32" (length 0x%zx).\n"	\
+	"         flash block at 0x%08" PRIx32 " (length 0x%zx).\n"	\
 	"         Clearing these before proceeding:\n"			\
 	"             "
 
@@ -620,7 +620,7 @@ static int samx5x_flash_write(struct target_flash *f,
 		}
 
 	if (error || target_check_error(t) || samx5x_check_nvm_error(t)) {
-		DEBUG_WARN("Error writing flash page at 0x%08"PRIx32
+		DEBUG_WARN("Error writing flash page at 0x%08" PRIx32
 		      " (len 0x%08zx)\n",  dest, len);
 		return -1;
 	}
@@ -707,8 +707,8 @@ static int samx5x_update_user_word(target *t, uint32_t addr, uint32_t value,
 		*value_written = new_word;
 
 	if (new_word != current_word) {
-		DEBUG_INFO("Writing user page word 0x%08"PRIx32
-				   " at offset 0x%03"PRIx32"\n", new_word, addr);
+		DEBUG_INFO("Writing user page word 0x%08" PRIx32
+				   " at offset 0x%03" PRIx32 "\n", new_word, addr);
 		memcpy(buffer + addr, &new_word, 4);
 		return samx5x_write_user_page(t, buffer);
 	}
@@ -885,7 +885,7 @@ static bool samx5x_cmd_ssb(target *t, int argc, const char **argv)
 #define FACTORY_BITS_MSG						\
 	"Warning: the value provided would have modified factory\n"	\
 	"         setting bits that should not be changed. The\n"	\
-	"         actual value written was: 0x%08"PRIx32"\n"		\
+	"         actual value written was: 0x%08" PRIx32 "\n"		\
 	"To override this protection to write the factory setting\n"	\
 	"bits, use: update_user_word <addr> <value> force\n"
 
@@ -962,7 +962,7 @@ static bool samx5x_cmd_mbist(target *t, int argc, const char **argv)
 	(void)argc;
 	(void)argv;
 
-	DEBUG_INFO("Running MBIST for memory range 0x%08x-%08"PRIx32"\n",
+	DEBUG_INFO("Running MBIST for memory range 0x%08x-%08" PRIx32 "\n",
 			   SAMX5X_RAM_START, samx5x_ram_size(t));
 
 	/* Write the memory parameters to the DSU
@@ -1034,7 +1034,7 @@ static bool samx5x_cmd_write8(target *t, int argc, const char **argv)
 		return false;
 	}
 
-	DEBUG_INFO("Writing 8-bit value 0x%02"PRIx32" at address 0x%08"PRIx32"\n",
+	DEBUG_INFO("Writing 8-bit value 0x%02" PRIx32 " at address 0x%08" PRIx32 "\n",
 			   value, addr);
 	target_mem_write8(t, addr, (uint8_t)value);
 
@@ -1066,7 +1066,7 @@ static bool samx5x_cmd_write16(target *t, int argc, const char **argv)
 		return false;
 	}
 
-	DEBUG_INFO("Writing 16-bit value 0x%04"PRIx32" at address 0x%08"PRIx32"\n",
+	DEBUG_INFO("Writing 16-bit value 0x%04" PRIx32 " at address 0x%08" PRIx32 "\n",
 			   value, addr);
 	target_mem_write16(t, addr, (uint16_t)value);
 
@@ -1093,7 +1093,7 @@ static bool samx5x_cmd_write32(target *t, int argc, const char **argv)
 		return false;
 	}
 
-	DEBUG_INFO("Writing 32-bit value 0x%08"PRIx32" at address 0x%08"PRIx32"\n",
+	DEBUG_INFO("Writing 32-bit value 0x%08" PRIx32 " at address 0x%08" PRIx32 "\n",
 			   value, addr);
 	target_mem_write32(t, addr, value);
 

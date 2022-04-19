@@ -41,6 +41,7 @@
 		(((x)>='a') && ((x)<='f'))						\
 		)
 
+extern jtag_proc_t jtag_proc;
 
 uint64_t remotehston(uint32_t limit, char *s)
 

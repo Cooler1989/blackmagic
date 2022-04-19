@@ -449,7 +449,7 @@ struct samd_descr samd_parse_device_id(uint32_t did)
 
 static void samd_add_flash(target *t, uint32_t addr, size_t length)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -486,17 +486,17 @@ bool samd_probe(target *t)
 	if ((did & SAMD_DID_MASK) != SAMD_DID_CONST_VALUE)
 		return false;
 
-	struct samd_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct samd_priv_s *priv_storage = static_cast<samd_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	t->target_storage = (void*)priv_storage;
 
 	uint32_t ctrlstat = target_mem_read32(t, SAMD_DSU_CTRLSTAT);
 	struct samd_descr samd = samd_parse_device_id(did);
 
 	/* Protected? */
-	bool protected = (ctrlstat & SAMD_STATUSB_PROT);
+	bool protected_ = (ctrlstat & SAMD_STATUSB_PROT);
 
 	/* Part String */
-	if (protected) {
+	if (protected_) {
 		sprintf(priv_storage->samd_variant_string,
 		        "Atmel SAM%c%02d%c%d%c%s (rev %c) (PROT=1)",
 		        samd.family,
@@ -525,7 +525,7 @@ bool samd_probe(target *t)
 		t->detach      = samd20_revB_detach;
 		t->halt_resume = samd20_revB_halt_resume;
 	}
-	if (protected) {
+	if (protected_) {
 		/**
 		 * Overload the default cortexm attach
 		 * for when the samd is protected.

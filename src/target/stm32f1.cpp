@@ -101,7 +101,7 @@ static int stm32f1_flash_write(struct target_flash *f,
 static void stm32f1_add_flash(target *t,
                               uint32_t addr, size_t length, size_t erasesize)
 {
-	struct target_flash *f = calloc(1, sizeof(*f));
+	struct target_flash *f = static_cast<target_flash*>(calloc(1, sizeof(*f)));
 	if (!f) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return;
@@ -163,6 +163,8 @@ bool stm32f1_probe(target *t)
 		t->idcode = target_mem_read32(t, DBGMCU_IDCODE) & 0xfff;
 	size_t flash_size;
 	size_t block_size = 0x400;
+        ADIv5_AP_t *ap;
+
 	switch(t->idcode) {
 	case 0x29b: /* CS clone */
 	case 0x410:  /* Medium density */
@@ -172,7 +174,7 @@ bool stm32f1_probe(target *t)
 		stm32f1_add_flash(t, 0x8000000, 0x20000, 0x400);
 		target_add_commands(t, stm32f1_cmd_list, "STM32 LD/MD/VL-LD/VL-MD");
 		/* Test for non-genuine parts with Core rev 2*/
-		ADIv5_AP_t *ap = cortexm_ap(t);
+		ap = cortexm_ap(t);
 		if ((ap->idr >> 28) > 1) {
 			t->driver = "STM32F1 (clone) medium density";
 #if defined(PLATFORM_HAS_DEBUG)
@@ -339,7 +341,7 @@ static int stm32f1_flash_write(struct target_flash *f,
 			return -1;
 		}
 		dest += length;
-		src += length;
+		src = reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(src) + length);
 	}
 	length = len - length;
 	if ((t->idcode == 0x430) && length) { /* Write on bank 2 */

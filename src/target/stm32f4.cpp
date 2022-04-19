@@ -147,7 +147,7 @@ static void stm32f4_add_flash(target *t,
                               unsigned int base_sector, int split)
 {
 	if (length == 0) return;
-	struct stm32f4_flash *sf = calloc(1, sizeof(*sf));
+	struct stm32f4_flash *sf = static_cast<stm32f4_flash*>(calloc(1, sizeof(*sf)));
 	struct target_flash *f;
 	if (!sf) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
@@ -168,7 +168,7 @@ static void stm32f4_add_flash(target *t,
 	target_add_flash(t, f);
 }
 
-static char *stm32f4_get_chip_name(uint32_t idcode)
+static const char *stm32f4_get_chip_name(uint32_t idcode)
 {
 	switch(idcode){
 	case ID_STM32F40X: /* F40XxE/G */
@@ -305,7 +305,7 @@ static bool stm32f4_attach(target *t)
 	}
 	bool use_dual_bank = false;
 	/* Save DBGMCU_CR to restore it when detaching*/
-	struct stm32f4_priv_s *priv_storage = calloc(1, sizeof(*priv_storage));
+	struct stm32f4_priv_s *priv_storage = static_cast<stm32f4_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	if (!priv_storage) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
 		return false;

@@ -46,7 +46,6 @@ typedef struct jtag_proc_s {
 	void (*jtagtap_tdi_seq)
 	(const uint8_t final_tms, const uint8_t *DI, int ticks);
 } jtag_proc_t;
-extern jtag_proc_t jtag_proc;
 
 /* generic soft reset: 1, 1, 1, 1, 1, 0 */
 #define jtagtap_soft_reset()	\

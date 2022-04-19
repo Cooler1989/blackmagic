@@ -1,4 +1,4 @@
-/*
+/*;jjjjjjjjjjjjjjjj
  * This file is part of the Black Magic Debug project.
  *
  * Copyright (C) 2011  Black Sphere Technologies Ltd.
@@ -23,10 +23,15 @@
 #include <stdio.h>
 
 #include "general.h"
-#include "jtagtap.hpp"
+#include "jtagtap.h"
 #include "gdb_packet.h"
 
-extern "C" jtag_proc_t jtag_proc;
+extern jtag_proc_t jtag_proc;
+jtag_proc_t jtag_proc;
+jtag_proc_t jtag_proc_2;
+
+struct aslkjdf_t {};
+aslkjdf_t jtag_proc_3{};
 
 static void jtagtap_reset(void);
 static void jtagtap_tms_seq(uint32_t MS, int ticks);
