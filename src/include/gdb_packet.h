@@ -27,7 +27,13 @@ int gdb_getpacket(char *packet, int size);
 void gdb_putpacket(const char *packet, int size);
 void gdb_putpacket2(const char *packet1, int size1, const char *packet2, int size2);
 #define gdb_putpacketz(packet) gdb_putpacket((packet), strlen(packet))
-void gdb_putpacket_f(const char *packet, ...);
+void gdb_putpacket_f_(const char *packet, ...);
+template <typename... Args>
+void gdb_putpacket_f(const char *fmt, Args... args)
+{
+        gdb_putpacket_f_(fmt, args...);
+}
+
 
 void gdb_out(const char *buf);
 void gdb_voutf(const char *fmt, va_list);

@@ -13,8 +13,10 @@ CFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
 	-I. -Iinclude -I$(PLATFORM_DIR)
 
 CXXFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
-	-std=c++14 -g3 -MD -I./target \
+	-std=c++2a -g3 -MD -I./target \
 	-I. -Iinclude -I$(PLATFORM_DIR)
+CXXFLAGS += -Wno-volatile
+CXXFLAGS += -Wno-register
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG

@@ -207,7 +207,7 @@ void gdb_putpacket(const char *packet, int size)
 	} while ((gdb_if_getchar_to(2000) != '+') && (tries++ < 3));
 }
 
-void gdb_putpacket_f(const char *fmt, ...)
+void gdb_putpacket_f_(const char *fmt, ...)
 {
 	va_list ap;
 	char *buf;

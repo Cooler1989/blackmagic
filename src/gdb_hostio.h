@@ -49,5 +49,29 @@ int hostio_isatty(struct target_controller *, int fd);
 int hostio_system(struct target_controller *,
 	           target_addr cmd, size_t cmd_len);
 
-#endif
+struct HostIOTargetController : public TargetControllerInterface
+{
+	void destroy_callback(target *t);
+	void printf( const char *fmt, va_list);
+
+	/* Interface to host system calls */
+	int open( target_addr path, size_t path_len,
+	            enum target_open_flags flags, mode_t mode);
+	int close( int fd);
+	int read( int fd, target_addr buf, unsigned int count);
+	int write( int fd, target_addr buf, unsigned int count);
+	long lseek( int fd, long offset, enum target_seek_flag flag);
+	int rename( target_addr oldpath, size_t old_len,
+	              target_addr newpath, size_t new_len);
+	int unlink( target_addr path, size_t path_len);
+	int stat( target_addr path, size_t path_len, target_addr buf);
+	int fstat( int fd, target_addr buf);
+	int gettimeofday( target_addr tv, target_addr tz);
+	int isatty( int fd);
+	int system( target_addr cmd, size_t cmd_len);
+	enum target_errno errno_;
+	bool interrupted_;
+};
+
+#endif  //  __GDB_SYSCALLS_H
 

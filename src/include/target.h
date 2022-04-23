@@ -146,6 +146,51 @@ enum target_seek_flag {
 	TARGET_SEEK_END = 2,
 };
 
+struct TargetControllerInterface {
+	virtual void destroy_callback(target *t) = 0;
+	virtual void printf( const char *fmt, va_list) = 0;
+
+	/* Interface to host system calls */
+	virtual int open( target_addr path, size_t path_len,
+	            enum target_open_flags flags, mode_t mode) = 0;
+	virtual int close( int fd) = 0;
+	virtual int read( int fd, target_addr buf, unsigned int count) = 0;
+	virtual int write( int fd, target_addr buf, unsigned int count) = 0;
+	virtual long lseek( int fd, long offset, enum target_seek_flag flag) = 0;
+	virtual int rename( target_addr oldpath, size_t old_len,
+	              target_addr newpath, size_t new_len) = 0;
+	virtual int unlink( target_addr path, size_t path_len) = 0;
+	virtual int stat( target_addr path, size_t path_len, target_addr buf) = 0;
+	virtual int fstat( int fd, target_addr buf) = 0;
+	virtual int gettimeofday( target_addr tv, target_addr tz) = 0;
+	virtual int isatty( int fd) = 0;
+	virtual int system( target_addr cmd, size_t cmd_len) = 0;
+};
+
+struct TargetController : public TargetControllerInterface
+{
+	void destroy_callback(target *t);
+	void printf( const char *fmt, va_list);
+
+	/* Interface to host system calls */
+	int open( target_addr path, size_t path_len,
+	            enum target_open_flags flags, mode_t mode);
+	int close( int fd);
+	int read( int fd, target_addr buf, unsigned int count);
+	int write( int fd, target_addr buf, unsigned int count);
+	long lseek( int fd, long offset, enum target_seek_flag flag);
+	int rename( target_addr oldpath, size_t old_len,
+	              target_addr newpath, size_t new_len);
+	int unlink( target_addr path, size_t path_len);
+	int stat( target_addr path, size_t path_len, target_addr buf);
+	int fstat( int fd, target_addr buf);
+	int gettimeofday( target_addr tv, target_addr tz);
+	int isatty( int fd);
+	int system( target_addr cmd, size_t cmd_len);
+	enum target_errno errno_;
+	bool interrupted_;
+};
+
 struct target_controller {
 	void (*destroy_callback)(struct target_controller *, target *t);
 	void (*printf)(struct target_controller *, const char *fmt, va_list);

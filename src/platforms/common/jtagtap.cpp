@@ -28,10 +28,6 @@
 
 extern jtag_proc_t jtag_proc;
 jtag_proc_t jtag_proc;
-jtag_proc_t jtag_proc_2;
-
-struct aslkjdf_t {};
-aslkjdf_t jtag_proc_3{};
 
 static void jtagtap_reset(void);
 static void jtagtap_tms_seq(uint32_t MS, int ticks);
