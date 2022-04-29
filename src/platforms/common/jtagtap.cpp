@@ -1,4 +1,4 @@
-/*;jjjjjjjjjjjjjjjj
+/*
  * This file is part of the Black Magic Debug project.
  *
  * Copyright (C) 2011  Black Sphere Technologies Ltd.
@@ -20,14 +20,17 @@
 
 /* This file implements the low-level JTAG TAP interface.  */
 
-#include <stdio.h>
-
 #include "general.h"
 #include "jtagtap.h"
 #include "gdb_packet.h"
 
+#include <stdio.h>
+#include <concepts>
+
 extern jtag_proc_t jtag_proc;
 jtag_proc_t jtag_proc;
+
+JtagProc<GenericGpio> jtag_proc_inst;
 
 static void jtagtap_reset(void);
 static void jtagtap_tms_seq(uint32_t MS, int ticks);
@@ -37,20 +40,22 @@ static void jtagtap_tdi_seq(
 	const uint8_t final_tms, const uint8_t *DI, int ticks);
 static uint8_t jtagtap_next(uint8_t dTMS, uint8_t dTDI);
 
+extern "C" void __cxa_pure_virtual() { while (1); };
+
 int jtagtap_init()
 {
 	TMS_SET_MODE();
 
 	jtag_proc.jtagtap_reset = jtagtap_reset;
-	jtag_proc.jtagtap_next =jtagtap_next;
+	jtag_proc.jtagtap_next = jtagtap_next;
 	jtag_proc.jtagtap_tms_seq = jtagtap_tms_seq;
 	jtag_proc.jtagtap_tdi_tdo_seq = jtagtap_tdi_tdo_seq;
 	jtag_proc.jtagtap_tdi_seq = jtagtap_tdi_seq;
 
 	/* Go to JTAG mode for SWJ-DP */
-	for(int i = 0; i <= 50; i++) jtagtap_next(1, 0); /* Reset SW-DP */
-	jtagtap_tms_seq(0xE73C, 16);		/* SWD to JTAG sequence */
-	jtagtap_soft_reset();
+	for(int i = 0; i <= 50; i++) jtag_proc_inst.jtagtap_next(1, 0); /* Reset SW-DP */
+	jtag_proc_inst.jtagtap_tms_seq(0xE73C, 16);		/* SWD to JTAG sequence */
+	jtagtap_soft_reset(jtag_proc_inst);
 
 	return 0;
 }
@@ -65,7 +70,7 @@ static void jtagtap_reset(void)
 		gpio_set(TRST_PORT, TRST_PIN);
 	}
 #endif
-	jtagtap_soft_reset();
+	jtagtap_soft_reset(jtag_proc_inst);
 }
 
 static uint8_t jtagtap_next(uint8_t dTMS, uint8_t dTDI)

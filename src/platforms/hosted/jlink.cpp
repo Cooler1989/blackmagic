@@ -22,7 +22,7 @@
 #include "general.h"
 #include "gdb_if.h"
 #include "adiv5.h"
-#include "exception.h"
+#include "custom_exception.h"
 
 #include <assert.h>
 #include <unistd.h>

@@ -30,7 +30,7 @@
 #include "target_internal.h"
 #include "adiv5.h"
 #include "cortexm.h"
-#include "exception.h"
+#include "custom_exception.h"
 
 /* All this should probably be defined in a dedicated ADIV5 header, so that they
  * are consistently named and accessible when needed in the codebase.
@@ -703,7 +703,7 @@ void adiv5_dp_init(ADIv5_DP_t *dp)
 	dp->mem_read = firmware_mem_read;
 	dp->mem_write_sized = firmware_mem_write_sized;
 #endif
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_TIMEOUT) {
 		ctrlstat = adiv5_dp_read(dp, ADIV5_DP_CTRLSTAT);
 	}

@@ -25,7 +25,7 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "target.h"
 #include "target_internal.h"
 #include "adiv5.h"
@@ -175,7 +175,7 @@ int jlink_swdp_scan(bmp_info_t *info)
 	ADIv5_DP_t *dp = (void*)calloc(1, sizeof(*dp));
 	if (!dp) /* calloc failed: heap exhaustion */
 		return 0;
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_ALL) {
 		dp->idcode = jlink_adiv5_swdp_low_access(dp, 1, ADIV5_DP_IDCODE, 0);
 	}

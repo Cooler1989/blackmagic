@@ -25,7 +25,7 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "command.h"
 #include "gdb_packet.h"
 #include "target.h"
@@ -189,7 +189,7 @@ static bool cmd_jtag_scan(target *t, int argc, char **argv)
 		platform_srst_set_val(true); /* will be deasserted after attach */
 
 	int devs = -1;
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_ALL) {
 #if PC_HOSTED == 1
 		devs = platform_jtag_scan(argc > 1 ? irlens : NULL);
@@ -229,7 +229,7 @@ bool cmd_swdp_scan(target *t, int argc, char **argv)
 		platform_srst_set_val(true); /* will be deasserted after attach */
 
 	int devs = -1;
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_ALL) {
 #if PC_HOSTED == 1
 		devs = platform_adiv5_swdp_scan(targetid);

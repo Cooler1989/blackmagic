@@ -23,6 +23,9 @@
 
 #include "jtag_scan.h"
 
+#include <bit>
+#include <bitset>
+
 #define ADIV5_APnDP       0x100
 #define ADIV5_DP_REG(x)   (x)
 #define ADIV5_AP_REG(x)   (ADIV5_APnDP | (x))
@@ -142,9 +145,13 @@
 #define ADIV5_LOW_WRITE		0
 #define ADIV5_LOW_READ		1
 
+using AckBits = std::bitset<32>;
+
 #define SWDP_ACK_OK    0x01
 #define SWDP_ACK_WAIT  0x02
-#define SWDP_ACK_FAULT 0x04
+//#define SWDP_ACK_FAULT 0x04
+
+const auto SWDP_ACK_FAULT = 0b011;
 
 enum align {
 	ALIGN_BYTE     = 0,

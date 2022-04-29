@@ -26,7 +26,7 @@
 #include "gdb_if.h"
 #include "gdb_main.h"
 #include "target.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "gdb_packet.h"
 #include "morse.h"
 
@@ -42,7 +42,7 @@ main(int argc, char **argv)
 #endif
 
 	while (true) {
-		volatile struct exception e;
+		volatile struct _exception e;
 		TRY_CATCH(e, EXCEPTION_ALL) {
 			gdb_main();
 		}

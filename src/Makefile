@@ -13,10 +13,15 @@ CFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
 	-I. -Iinclude -I$(PLATFORM_DIR)
 
 CXXFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
-	-std=c++2a -g3 -MD -I./target \
+	-std=c++2a -fconcepts -g3 -MD -I./target \
 	-I. -Iinclude -I$(PLATFORM_DIR)
 CXXFLAGS += -Wno-volatile
 CXXFLAGS += -Wno-register
+CXXFLAGS += -Wno-unused-function
+CXXFLAGS += -fno-rtti
+CXXFLAGS += -fno-threadsafe-statics
+CXXFLAGS += -fno-exceptions
+CXXFLAGS += -fno-use-cxa-atexit
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
@@ -73,6 +78,10 @@ include $(PLATFORM_DIR)/Makefile.inc
 ifneq ($(PC_HOSTED),1)
 # Output memory usage information
 LDFLAGS += -Wl,--print-memory-usage
+LDFLAGS += --specs=nosys.specs
+LDFLAGS += -fno-exceptions
+LDFLAGS += -fno-rtti
+LDFLAGS += -fno-use-cxa-atexit
 endif
 
 OPT_FLAGS ?= -Os
@@ -110,7 +119,7 @@ OBJ_CPP = $(patsubst %.cpp,%.o,$(SRC_CPP))
 
 $(TARGET): include/version.h $(OBJ) $(OBJ_CPP)
 	@echo "  LD      $@"
-	$(Q)$(CC) -o $@ $(OBJ) $(LDFLAGS)
+	$(Q)$(CXX) -o $@ $(OBJ) $(LDFLAGS)
 
 %.o:	%.cpp
 	@echo "  CXX     $<"

@@ -23,11 +23,8 @@
 #include "general.h"
 #include "timing.h"
 #include "adiv5.h"
+#include "swdptap.h"
 
-enum {
-	SWDIO_STATUS_FLOAT = 0,
-	SWDIO_STATUS_DRIVE
-};
 static void swdptap_turnaround(int dir) __attribute__ ((optimize(3)));
 static uint32_t swdptap_seq_in(int ticks) __attribute__ ((optimize(3)));
 static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
@@ -204,12 +201,20 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 	for(cnt = swd_delay_cnt; --cnt > 0;);
 }
 
+
 int swdptap_init(ADIv5_DP_t *dp)
 {
 	dp->seq_in  = swdptap_seq_in;
 	dp->seq_in_parity  = swdptap_seq_in_parity;
 	dp->seq_out = swdptap_seq_out;
-	dp->seq_out_parity  = swdptap_seq_out_parity;
+	dp->seq_out_parity = swdptap_seq_out_parity;
 
 	return 0;
+}
+
+ADIv5DpHwLayer_i& SwdpTapInstance()
+{
+  static ADIv5DpHwLayer<GenericGpio> hw_layer;
+  //  hw_layer.seq_out_parity(0, 0);
+  return hw_layer;
 }

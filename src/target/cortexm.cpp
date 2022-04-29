@@ -28,7 +28,7 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "adiv5.h"
 #include "target.h"
 #include "target_internal.h"
@@ -758,7 +758,7 @@ static void cortexm_reset(target *t)
 
 static void cortexm_halt_request(target *t)
 {
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_TIMEOUT) {
 		target_mem_write32(t, CORTEXM_DHCSR, CORTEXM_DHCSR_DBGKEY |
 		                                          CORTEXM_DHCSR_C_HALT |
@@ -774,7 +774,7 @@ static enum target_halt_reason cortexm_halt_poll(target *t, target_addr *watch)
 	struct cortexm_priv *priv = static_cast<cortexm_priv*>(t->priv);
 
 	volatile uint32_t dhcsr = 0;
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_ALL) {
 		/* If this times out because the target is in WFI then
 		 * the target is still running. */
