@@ -25,7 +25,7 @@
 #include "jtagtap.h"
 #include "gdb_if.h"
 #include "version.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include <stdarg.h>
 #include "target/adiv5.h"
 #include "target.h"

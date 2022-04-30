@@ -1,4 +1,4 @@
-/*;jjjjjjjjjjjjjjjj
+/*
  * This file is part of the Black Magic Debug project.
  *
  * Copyright (C) 2011  Black Sphere Technologies Ltd.

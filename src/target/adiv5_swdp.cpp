@@ -24,7 +24,7 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "adiv5.h"
 #include "target.h"
 #include "target_internal.h"
@@ -67,7 +67,7 @@ bool firmware_dp_low_write(ADIv5_DP_t *dp, uint16_t addr, const uint32_t data)
  */
 int adiv5_swdp_scan(uint32_t targetid)
 {
-	volatile struct exception e;
+	volatile struct _exception e;
 	target_list_free();
 	ADIv5_DP_t idp = {};
         idp.dp_low_write = firmware_dp_low_write;

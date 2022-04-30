@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "exception.h"
+#include "custom_exception.h"
 
 #include "jlink.h"
 #include "cl_utils.h"

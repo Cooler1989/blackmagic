@@ -19,13 +19,13 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 
-struct exception *innermost_exception;
+struct _exception *innermost_exception;
 
 void raise_exception(uint32_t type, const char *msg)
 {
-	struct exception *e;
+	struct _exception *e;
 	for (e = innermost_exception; e; e = e->outer) {
 		if (e->mask & type) {
 			e->type = type;

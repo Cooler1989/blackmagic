@@ -28,7 +28,7 @@
  * scan chain during reset.
  */
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "adiv5.h"
 #include "target.h"
 #include "target_internal.h"
@@ -581,7 +581,7 @@ static void cortexa_reset(target *t)
 	/* Spin until Xilinx reconnects us */
 	platform_timeout timeout;
 	platform_timeout_set(&timeout, 1000);
-	volatile struct exception e;
+	volatile struct _exception e;
 	do {
 		TRY_CATCH (e, EXCEPTION_ALL) {
 			apb_read(t, DBGDIDR);
@@ -597,7 +597,7 @@ static void cortexa_reset(target *t)
 
 static void cortexa_halt_request(target *t)
 {
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_TIMEOUT) {
 		apb_write(t, DBGDRCR, DBGDRCR_HRQ);
 	}
@@ -611,7 +611,7 @@ static enum target_halt_reason cortexa_halt_poll(target *t, target_addr *watch)
 	(void)watch; /* No watchpoint support yet */
 
 	volatile uint32_t dbgdscr = 0;
-	volatile struct exception e;
+	volatile struct _exception e;
 	TRY_CATCH (e, EXCEPTION_ALL) {
 		/* If this times out because the target is in WFI then
 		 * the target is still running. */

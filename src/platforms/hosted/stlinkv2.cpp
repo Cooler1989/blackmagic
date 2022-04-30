@@ -29,7 +29,7 @@
 #include "adiv5.h"
 #include "bmp_hosted.h"
 #include "stlinkv2.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "jtag_devs.h"
 #include "target.h"
 #include "cortexm.h"

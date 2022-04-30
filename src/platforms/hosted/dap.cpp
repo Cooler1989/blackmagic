@@ -32,7 +32,7 @@
 
 /*- Includes ----------------------------------------------------------------*/
 #include <general.h>
-#include "exception.h"
+#include "custom_exception.h"
 #include "dap.h"
 #include "jtag_scan.h"
 

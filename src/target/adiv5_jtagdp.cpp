@@ -23,7 +23,7 @@
  */
 
 #include "general.h"
-#include "exception.h"
+#include "custom_exception.h"
 #include "adiv5.h"
 #include "jtag_scan.h"
 #include "jtagtap.h"
