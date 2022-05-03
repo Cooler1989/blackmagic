@@ -37,12 +37,14 @@ static void jtagtap_tdi_seq(
 	const uint8_t final_tms, const uint8_t *DI, int ticks);
 static uint8_t jtagtap_next(uint8_t dTMS, uint8_t dTDI);
 
+extern "C" void __cxa_pure_virtual() { while (1); };
+
 int jtagtap_init()
 {
 	TMS_SET_MODE();
 
 	jtag_proc.jtagtap_reset = jtagtap_reset;
-	jtag_proc.jtagtap_next =jtagtap_next;
+	jtag_proc.jtagtap_next = jtagtap_next;
 	jtag_proc.jtagtap_tms_seq = jtagtap_tms_seq;
 	jtag_proc.jtagtap_tdi_tdo_seq = jtagtap_tdi_tdo_seq;
 	jtag_proc.jtagtap_tdi_seq = jtagtap_tdi_seq;

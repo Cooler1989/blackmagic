@@ -17,6 +17,8 @@ CXXFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
 	-I. -Iinclude -I$(PLATFORM_DIR)
 CXXFLAGS += -Wno-volatile
 CXXFLAGS += -Wno-register
+CXXFLAGS += -fno-threadsafe-statics
+CXXFLAGS += -fno-rtti
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG

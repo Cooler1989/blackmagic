@@ -29,6 +29,7 @@
 #include "target.h"
 #include "target_internal.h"
 
+#include "swdptap.h"
 unsigned int make_packet_request(uint8_t RnW, uint16_t addr)
 {
 	bool APnDP = addr & ADIV5_APnDP;
@@ -46,13 +47,13 @@ unsigned int make_packet_request(uint8_t RnW, uint16_t addr)
 
 /* Provide bare DP access functions without timeout and exception */
 
-static void dp_line_reset(ADIv5_DP_t *dp)
+static void dp_line_reset(ADIv5DpHwLayer_i& swdp_tap = SwdpTapInstance() )
 {
-	dp->seq_out(0xFFFFFFFF, 32);
-	dp->seq_out(0x0FFFFFFF, 32);
+	swdp_tap.seq_out(0xFFFFFFFF, 32);
+	swdp_tap.seq_out(0x0FFFFFFF, 32);
 }
 
-bool firmware_dp_low_write(ADIv5_DP_t *dp, uint16_t addr, const uint32_t data)
+static bool firmware_dp_low_write(ADIv5_DP_t *dp, uint16_t addr, const uint32_t data)
 {
 	unsigned int request =  make_packet_request(ADIV5_LOW_WRITE, addr & 0xf);
 	dp->seq_out(request, 8);
@@ -78,25 +79,26 @@ int adiv5_swdp_scan(uint32_t targetid)
         ADIv5_DP_t *initial_dp = &idp;
 	if (swdptap_init(initial_dp))
 		return -1;
+        ADIv5DpHwLayer_i& swdp_tap = SwdpTapInstance();
 	/* DORMANT-> SWD sequence*/
-	initial_dp->seq_out(0xFFFFFFFF, 32);
-	initial_dp->seq_out(0xFFFFFFFF, 32);
+	swdp_tap.seq_out(0xFFFFFFFF, 32);
+	swdp_tap.seq_out(0xFFFFFFFF, 32);
 	/* 128 bit selection alert sequence for SW-DP-V2 */
-	initial_dp->seq_out(0x6209f392, 32);
-	initial_dp->seq_out(0x86852d95, 32);
-	initial_dp->seq_out(0xe3ddafe9, 32);
-	initial_dp->seq_out(0x19bc0ea2, 32);
+	swdp_tap.seq_out(0x6209f392, 32);
+	swdp_tap.seq_out(0x86852d95, 32);
+	swdp_tap.seq_out(0xe3ddafe9, 32);
+	swdp_tap.seq_out(0x19bc0ea2, 32);
 	/* 4 cycle low,
 	 * 0x1a Arm CoreSight SW-DP activation sequence
 	 * 20 bits start of reset another reset sequence*/
-	initial_dp->seq_out(0x1a0, 12);
+	swdp_tap.seq_out(0x1a0, 12);
 	uint32_t idcode = 0;
 	volatile uint32_t target_id = 0;
 	bool scan_multidrop = true;
 	if (!targetid || !initial_dp->dp_low_write) {
 		/* No targetID given on the command line or probe can not
 		 * handle multi-drop. Try to read ID */
-		dp_line_reset(initial_dp);
+		dp_line_reset(swdp_tap);
 
 		TRY_CATCH (e, EXCEPTION_ALL) {
 			idcode = initial_dp->dp_read(initial_dp, ADIV5_DP_IDCODE);
@@ -104,10 +106,10 @@ int adiv5_swdp_scan(uint32_t targetid)
 		if (e.type || initial_dp->fault) {
 			scan_multidrop = false;
 			DEBUG_WARN("Trying old JTAG to SWD sequence\n");
-			initial_dp->seq_out(0xFFFFFFFF, 32);
-			initial_dp->seq_out(0xFFFFFFFF, 32);
-			initial_dp->seq_out(0xE79E, 16); /* 0b0111100111100111 */
-			dp_line_reset(initial_dp);
+			swdp_tap.seq_out(0xFFFFFFFF, 32);
+			swdp_tap.seq_out(0xFFFFFFFF, 32);
+			swdp_tap.seq_out(0xE79E, 16); /* 0b0111100111100111 */
+			dp_line_reset(swdp_tap);
 			initial_dp->fault = 0;
 
 			TRY_CATCH (e, EXCEPTION_ALL) {
@@ -146,7 +148,7 @@ int adiv5_swdp_scan(uint32_t targetid)
 	volatile uint32_t dp_targetid;
 	for (volatile int i = 0; i < nr_dps; i++) {
 		if (scan_multidrop) {
-			dp_line_reset(initial_dp);
+			dp_line_reset(swdp_tap);
 			dp_targetid = (i << 28) | (target_id & 0x0fffffff);
 			initial_dp->dp_low_write(initial_dp, ADIV5_DP_TARGETSEL,
 									dp_targetid);
@@ -191,7 +193,7 @@ uint32_t firmware_swdp_read(ADIv5_DP_t *dp, uint16_t addr)
 		/* On protocoll error target gets deselected.
 		 * With DP Change, another target needs selection.
 		 * => Reselect with right target! */
-		dp_line_reset(dp);
+		dp_line_reset();
 		dp->dp_low_write(dp, ADIV5_DP_TARGETSEL, dp->targetid);
 		dp->dp_read(dp, ADIV5_DP_IDCODE);
 		/* Exception here is unexpected, so do not catch */
