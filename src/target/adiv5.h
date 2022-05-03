@@ -142,6 +142,7 @@
 #define ADIV5_LOW_WRITE		0
 #define ADIV5_LOW_READ		1
 
+using AckBits = uint32_t;/*std::bitset<32>*/
 #define SWDP_ACK_OK    0x01
 #define SWDP_ACK_WAIT  0x02
 #define SWDP_ACK_FAULT 0x04
@@ -210,8 +211,6 @@ struct ADIv5_AP_s {
 	uint16_t ap_designer;
 	uint16_t ap_partno;
 };
-
-unsigned int make_packet_request(uint8_t RnW, uint16_t addr);
 
 #if PC_HOSTED == 0
 static inline uint32_t adiv5_dp_read(ADIv5_DP_t *dp, uint16_t addr)
