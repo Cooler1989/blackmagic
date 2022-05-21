@@ -23,6 +23,8 @@
 
 #include "jtag_scan.h"
 
+#include "swdptap.h"
+
 #define ADIV5_APnDP       0x100
 #define ADIV5_DP_REG(x)   (x)
 #define ADIV5_AP_REG(x)   (ADIV5_APnDP | (x))
@@ -163,6 +165,7 @@ typedef struct ADIv5_DP_s {
 	uint32_t idcode;
 	uint32_t targetid;  /* Contains IDCODE for DPv2 devices.*/
 
+        // ##########    low level sequence control    ############
 	void (*seq_out)(uint32_t MS, int ticks);
 	void (*seq_out_parity)(uint32_t MS, int ticks);
 	uint32_t (*seq_in)(int ticks);
@@ -197,6 +200,29 @@ typedef struct ADIv5_DP_s {
 	uint8_t fault;
 } ADIv5_DP_t;
 
+class AdiV5Swdp
+{
+  public:
+    uint32_t error();
+    uint32_t low_access(uint8_t RnW, uint16_t addr, uint32_t value);
+    void dp_write(uint16_t addr, uint32_t value);
+    bool dp_low_write(uint16_t addr, const uint32_t data);
+    unsigned int make_packet_request(uint8_t RnW, uint16_t addr);
+    void abort(uint32_t abort);
+    int swdp_scan(uint32_t targetid);
+  private:
+    void dp_line_reset();
+    uint32_t dp_read(uint16_t addr);  //  this is replaced by compile time symbol when Hosted is used;
+    uint32_t swdp_low_access(uint8_t RnW, uint16_t addr, uint32_t value);
+
+    uint8_t fault_;
+    uint32_t idcode_;
+    uint32_t targetid_;  /* Contains IDCODE for DPv2 devices.*/
+
+    ADIv5DpHwLayer_i& swdp_tap = SwdpTapInstance();
+    ADIv5_DP_t *initial_dp = nullptr;
+};
+
 struct ADIv5_AP_s {
 	int refcnt;
 
@@ -210,6 +236,32 @@ struct ADIv5_AP_s {
 	uint32_t ap_storage; /* E.g to hold STM32F7 initial DBGMCU_CR value.*/
 	uint16_t ap_designer;
 	uint16_t ap_partno;
+};
+
+class ADI_v5_AP
+{
+  public:
+    void ap_write(uint16_t addr, uint32_t value);
+    uint32_t ap_read(uint16_t addr);
+    void mem_write(uint16_t dest, const void *src, size_t len);
+    uint32_t mem_read(uint16_t addr);
+
+    int refcnt;
+
+    //TODO: use reference to DP
+    //ADIv5_DP_t *dp;
+    uint8_t apsel;
+
+    uint32_t idr;
+    uint32_t base;
+    uint32_t csw;
+    uint32_t ap_cortexm_demcr; /* Copy of demcr when starting */
+    uint32_t ap_storage; /* E.g to hold STM32F7 initial DBGMCU_CR value.*/
+    uint16_t ap_designer;
+    uint16_t ap_partno;
+
+  private:
+    //  AdiV5Swdp& dp_class;
 };
 
 #if PC_HOSTED == 0
@@ -277,6 +329,7 @@ void adiv5_dp_write(ADIv5_DP_t *dp, uint16_t addr, uint32_t value);
 #endif
 
 void adiv5_dp_init(ADIv5_DP_t *dp);
+void adiv5_dp_init(ADIv5_DP_t *dp, AdiV5Swdp& dp_class);
 void platform_adiv5_dp_defaults(ADIv5_DP_t *dp);
 ADIv5_AP_t *adiv5_new_ap(ADIv5_DP_t *dp, uint8_t apsel);
 void remote_jtag_dev(const jtag_dev_t *jtag_dev);
@@ -305,7 +358,7 @@ uint32_t fw_adiv5_jtagdp_low_access(ADIv5_DP_t *dp, uint8_t RnW,
 uint32_t firmware_swdp_read(ADIv5_DP_t *dp, uint16_t addr);
 uint32_t fw_adiv5_jtagdp_read(ADIv5_DP_t *dp, uint16_t addr);
 
-uint32_t firmware_swdp_error(ADIv5_DP_t *dp);
+//  uint32_t firmware_swdp_error(ADIv5_DP_t *dp);
 
 void firmware_swdp_abort(ADIv5_DP_t *dp, uint32_t abort);
 void adiv5_jtagdp_abort(ADIv5_DP_t *dp, uint32_t abort);

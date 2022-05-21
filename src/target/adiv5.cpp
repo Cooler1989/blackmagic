@@ -668,8 +668,25 @@ static void rp_rescue_setup(ADIv5_DP_t *dp)
 	return;
 }
 
+void ADI_v5_AP::ap_write(uint16_t addr, uint32_t value)
+{
+    (void)addr;
+    (void)value;
+      //  adiv5_dp_write(dp, ADIV5_DP_SELECT,
+      //                ((uint32_t)ap->apsel << 24)|(addr & 0xF0));
+      //  adiv5_dp_write(ap->dp, addr, value);
+}
+
 void adiv5_dp_init(ADIv5_DP_t *dp)
 {
+  //  stub for jtag till it is implemented
+  (void)dp;
+  AdiV5Swdp dummy;
+}
+
+void adiv5_dp_init(ADIv5_DP_t *dp, AdiV5Swdp& dp_class)
+{
+  (void)dp_class;
 #define DPIDR_PARTNO_MASK 0x0ff00000
 /* Check IDCODE for a valid designer and sensible PARTNO*/
 	if (((dp->idcode & 0xfff) == 0)  ||
