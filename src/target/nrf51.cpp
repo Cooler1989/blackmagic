@@ -411,7 +411,7 @@ const struct command_s nrf51_mdm_cmd_list[] = {
 #define MDM_CONTROL ADIV5_AP_REG(0x04)
 #define MDM_PROT_EN  ADIV5_AP_REG(0x0C)
 
-void nrf51_mdm_probe(ADIv5_AP_t *ap)
+void nrf51_mdm_probe(ADI_v5_AP *ap)
 {
 	switch(ap->idr) {
 	case NRF52_MDM_IDR:
@@ -425,12 +425,13 @@ void nrf51_mdm_probe(ADIv5_AP_t *ap)
 		return;
 	}
 
-	adiv5_ap_ref(ap);
+        ap->ref_inc();
 	t->priv = ap;
-	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
+	//  t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
+	t->priv_free = nullptr;
 
-	uint32_t status = adiv5_ap_read(ap, MDM_PROT_EN);
-	status = adiv5_ap_read(ap, MDM_PROT_EN);
+	uint32_t status = ap->ap_read(MDM_PROT_EN);
+	status = ap->ap_read(MDM_PROT_EN);
 	if (status)
 		t->driver = "Nordic nRF52 Access Port";
 	else
@@ -443,24 +444,24 @@ static bool nrf51_mdm_cmd_erase_mass(target *t, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
-	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(t->priv);
+	ADI_v5_AP *ap = static_cast<ADI_v5_AP*>(t->priv);
 
-	uint32_t status = adiv5_ap_read(ap, MDM_STATUS);
+	uint32_t status = ap->ap_read(MDM_STATUS);
 
-	adiv5_dp_write(ap->dp, MDM_POWER_EN, 0x50000000);
+	ap->get_dp().dp_write(MDM_POWER_EN, 0x50000000);
 
-	adiv5_dp_write(ap->dp, MDM_SELECT_AP, 0x01000000);
+        ap->get_dp().dp_write(MDM_SELECT_AP, 0x01000000);
 
-	adiv5_ap_write(ap, MDM_CONTROL, 0x00000001);
+	ap->ap_write(MDM_CONTROL, 0x00000001);
 
 	// Read until 0, probably should have a timeout here...
 	do {
-		status = adiv5_ap_read(ap, MDM_STATUS);
+		status = ap->ap_read(MDM_STATUS);
 	} while (status);
 
 	// The second read will provide true prot status
-	status = adiv5_ap_read(ap, MDM_PROT_EN);
-	status = adiv5_ap_read(ap, MDM_PROT_EN);
+	status = ap->ap_read(MDM_PROT_EN);
+	status = ap->ap_read(MDM_PROT_EN);
 
 	// should we return the prot status here?
 	return true;

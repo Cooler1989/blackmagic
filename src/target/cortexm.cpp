@@ -92,7 +92,7 @@ static int cortexm_hostio_request(target *t);
 static uint32_t time0_sec = UINT32_MAX; /* sys_clock time origin */
 
 struct cortexm_priv {
-	ADIv5_AP_t *ap;
+	ADI_v5_AP *ap;
 	bool stepping;
 	bool on_bkpt;
 	/* Watchpoint unit status */
@@ -209,7 +209,7 @@ static const char tdesc_cortex_mf[] =
 	"  </feature>"
 	"</target>";
 
-ADIv5_AP_t *cortexm_ap(target *t)
+ADI_v5_AP *cortexm_ap(target *t)
 {
 	return ((struct cortexm_priv *)t->priv)->ap;
 }
@@ -235,35 +235,35 @@ static void cortexm_cache_clean(target *t, target_addr addr, size_t len, bool in
 			ram_end = mem_end;
 		/* intersection is [ram, ram_end) */
 		for (ram &= ~(minline-1); ram < ram_end; ram += minline)
-			adiv5_mem_write(cortexm_ap(t), cache_reg, &ram, 4);
+			cortexm_ap(t)->mem_write(cache_reg, &ram, 4);
 	}
 }
 
 static void cortexm_mem_read(target *t, void *dest, target_addr src, size_t len)
 {
 	cortexm_cache_clean(t, src, len, false);
-	adiv5_mem_read(cortexm_ap(t), dest, src, len);
+	cortexm_ap(t)->mem_read(dest, src, len);
 }
 
 static void cortexm_mem_write(target *t, target_addr dest, const void *src, size_t len)
 {
 	cortexm_cache_clean(t, dest, len, true);
-	adiv5_mem_write(cortexm_ap(t), dest, src, len);
+	cortexm_ap(t)->mem_write(dest, src, len);
 }
 
 static bool cortexm_check_error(target *t)
 {
-	ADIv5_AP_t *ap = cortexm_ap(t);
-	return adiv5_dp_error(ap->dp) != 0;
+	ADI_v5_AP *ap = cortexm_ap(t);
+        return ap->get_dp().error() != 0;
 }
 
 static void cortexm_priv_free(void *priv)
 {
-	adiv5_ap_unref(((struct cortexm_priv *)priv)->ap);
+	((struct cortexm_priv *)priv)->ap->ref_dec();
 	free(priv);
 }
 
-bool cortexm_probe(ADIv5_AP_t *ap)
+bool cortexm_probe(ADI_v5_AP &ap)
 {
 	target *t;
 
@@ -272,9 +272,9 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 		return false;
 	}
 
-	adiv5_ap_ref(ap);
-	t->t_designer = ap->ap_designer;
-	t->idcode     = ap->ap_partno;
+	ap.ref_inc();
+	t->t_designer = ap.ap_designer;
+	t->idcode     = ap.ap_partno;
 	struct cortexm_priv *priv = static_cast<cortexm_priv*>(calloc(1, sizeof(*priv)));
 	if (!priv) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
@@ -283,7 +283,7 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 
 	t->priv = priv;
 	t->priv_free = cortexm_priv_free;
-	priv->ap = ap;
+	priv->ap = &ap;
 
 	t->check_error = cortexm_check_error;
 	t->mem_read = cortexm_mem_read;
@@ -326,7 +326,7 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 		t->core = "M0";
 		break;
 	default:
-		if (ap->ap_designer != AP_DESIGNER_ATMEL) /* Protected Atmel device?*/{
+		if (ap.ap_designer != AP_DESIGNER_ATMEL) /* Protected Atmel device?*/{
 			DEBUG_WARN("Unexpected CortexM CPUID partno %04" PRIx32 "\n", cpuid_partno);
 		}
 	}
@@ -381,10 +381,10 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 #define PROBE(x) \
 	do { if ((x)(t)) {return true;} else target_check_error(t); } while (0)
 
-	switch (ap->ap_designer) {
+	switch (ap.ap_designer) {
 	case AP_DESIGNER_FREESCALE:
 		PROBE(kinetis_probe);
-		if (ap->ap_partno == 0x88c) {
+		if (ap.ap_partno == 0x88c) {
 			t->driver = "MIMXRT10xx(no flash)";
 			target_halt_resume(t, 0);
 		}
@@ -427,27 +427,27 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 		PROBE(lpc11xx_probe); /* LPC845 */
 		break;
 	default:
-		if (ap->ap_designer != AP_DESIGNER_ARM) {
+		if (ap.ap_designer != AP_DESIGNER_ARM) {
 			/* Report unexpected designers */
 #if PC_HOSTED == 0
 				gdb_outf("Please report Designer %3x and Partno %3x and the "
-						 "probed device\n", ap->ap_designer, ap->ap_partno);
+						 "probed device\n", ap.ap_designer, ap.ap_partno);
 #else
 				DEBUG_WARN("Please report Designer %3x and Partno %3x and the "
-						   "probed device\n", ap->ap_designer, ap->ap_partno);
+						   "probed device\n", ap.ap_designer, ap.ap_partno);
 #endif
 		}
-		if (ap->ap_partno == 0x4c0)  { /* Cortex-M0+ ROM */
-			if ((ap->dp->targetid & 0xfff) == AP_DESIGNER_RASPBERRY)
+		if (ap.ap_partno == 0x4c0)  { /* Cortex-M0+ ROM */
+			if ((ap.get_dp().targetid_ & 0xfff) == AP_DESIGNER_RASPBERRY)
 				PROBE(rp_probe);
 			PROBE(lpc11xx_probe); /* LPC8 */
-		} else if (ap->ap_partno == 0x4c3)  { /* Cortex-M3 ROM */
+		} else if (ap.ap_partno == 0x4c3)  { /* Cortex-M3 ROM */
 			PROBE(stm32f1_probe); /* Care for STM32F1 clones */
 			PROBE(lpc15xx_probe); /* Thanks to JojoS for testing */
-		} else if (ap->ap_partno == 0x471)  { /* Cortex-M0 ROM */
+		} else if (ap.ap_partno == 0x471)  { /* Cortex-M0 ROM */
 			PROBE(lpc11xx_probe); /* LPC24C11 */
 			PROBE(lpc43xx_probe);
-		} else if (ap->ap_partno == 0x4c4) { /* Cortex-M4 ROM */
+		} else if (ap.ap_partno == 0x4c4) { /* Cortex-M4 ROM */
 			/* The LPC546xx and LPC43xx parts present with the same AP ROM Part
 			Number, so we need to probe both. Unfortunately, when probing for
 			the LPC43xx when the target is actually an LPC546xx, the memory
@@ -459,9 +459,9 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 
 			PROBE(lpc43xx_probe);
 			PROBE(kinetis_probe); /* Older K-series */
-		} else if (ap->ap_partno == 0x4cb) { /* Cortex-M23 ROM */
+		} else if (ap.ap_partno == 0x4cb) { /* Cortex-M23 ROM */
 			PROBE(gd32f1_probe); /* GD32E23x uses GD32F1 peripherals */
-		} else if (ap->ap_partno == 0x4c0) { /* Cortex-M0+ ROM */
+		} else if (ap.ap_partno == 0x4c0) { /* Cortex-M0+ ROM */
 			PROBE(lpc11xx_probe); /* some of the LPC8xx series, like LPC802 */
 		}
 		/* Info on PIDR of these parts wanted! */
@@ -476,8 +476,8 @@ bool cortexm_probe(ADIv5_AP_t *ap)
 
 bool cortexm_attach(target *t)
 {
-	ADIv5_AP_t *ap = cortexm_ap(t);
-	ap->dp->fault = 1; /* Force switch to this multi-drop device*/
+	ADI_v5_AP *ap = cortexm_ap(t);
+	ap->get_dp().fault_ = 1; /* Force switch to this multi-drop device*/
 	target_check_error(t);
 	struct cortexm_priv *priv = static_cast<cortexm_priv*>(t->priv);
 	unsigned i;
@@ -553,7 +553,7 @@ void cortexm_detach(target *t)
 		target_mem_write32(t, CORTEXM_DWT_FUNC(i), 0);
 
 	/* Restort DEMCR*/
-	ADIv5_AP_t *ap = cortexm_ap(t);
+	ADI_v5_AP *ap = cortexm_ap(t);
 	target_mem_write32(t, CORTEXM_DEMCR, ap->ap_cortexm_demcr);
 	/* Disable debug */
 	target_mem_write32(t, CORTEXM_DHCSR, CORTEXM_DHCSR_DBGKEY);
@@ -564,10 +564,10 @@ enum { DB_DHCSR, DB_DCRSR, DB_DCRDR, DB_DEMCR };
 static void cortexm_regs_read(target *t, void *data)
 {
 	uint32_t *regs = static_cast<uint32_t*>(data);
-	ADIv5_AP_t *ap = cortexm_ap(t);
+	ADI_v5_AP *ap = cortexm_ap(t);
 	unsigned i;
 #if PC_HOSTED == 1
-	if ((ap->dp->ap_reg_read) && (ap->dp->ap_regs_read)) {
+	if ((ap.get_dp().ap_reg_read) && (ap.get_dp().ap_regs_read)) {
 		uint32_t base_regs[21];
 		ap->dp->ap_regs_read(ap, base_regs);
 		for(i = 0; i < sizeof(regnum_cortex_m) / 4; i++)
@@ -581,29 +581,29 @@ static void cortexm_regs_read(target *t, void *data)
 #endif
 	else {
 		/* FIXME: Describe what's really going on here */
-		adiv5_ap_write(ap, ADIV5_AP_CSW, ap->csw | ADIV5_AP_CSW_SIZE_WORD);
+		ap->ap_write(ADIV5_AP_CSW, ap->csw | ADIV5_AP_CSW_SIZE_WORD);
 
 		/* Map the banked data registers (0x10-0x1c) to the
 		 * debug registers DHCSR, DCRSR, DCRDR and DEMCR respectively */
-		adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_TAR,
+		ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_TAR,
 							CORTEXM_DHCSR);
 
 		/* Walk the regnum_cortex_m array, reading the registers it
 		 * calls out. */
-		adiv5_ap_write(ap, ADIV5_AP_DB(DB_DCRSR), regnum_cortex_m[0]);
+		ap->ap_write(ADIV5_AP_DB(DB_DCRSR), regnum_cortex_m[0]);
        /* Required to switch banks */
-		*regs++ = adiv5_dp_read(ap->dp, ADIV5_AP_DB(DB_DCRDR));
+		*regs++ = ap->get_dp().dp_read(ADIV5_AP_DB(DB_DCRDR));
 		for(i = 1; i < sizeof(regnum_cortex_m) / 4; i++) {
-		adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
+		ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
 			regnum_cortex_m[i]);
-		*regs++ = adiv5_dp_read(ap->dp, ADIV5_AP_DB(DB_DCRDR));
+		*regs++ = ap->get_dp().dp_read(ADIV5_AP_DB(DB_DCRDR));
 		}
 		if (t->target_options & TOPT_FLAVOUR_V7MF)
 			for(i = 0; i < sizeof(regnum_cortex_mf) / 4; i++) {
-				adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE,
+				ap->get_dp().low_access(ADIV5_LOW_WRITE,
 									ADIV5_AP_DB(DB_DCRSR),
 									regnum_cortex_mf[i]);
-				*regs++ = adiv5_dp_read(ap->dp, ADIV5_AP_DB(DB_DCRDR));
+				*regs++ = ap->get_dp().dp_read(ADIV5_AP_DB(DB_DCRDR));
 			}
 		}
 }
@@ -611,7 +611,7 @@ static void cortexm_regs_read(target *t, void *data)
 static void cortexm_regs_write(target *t, const void *data)
 {
 	const uint32_t *regs = static_cast<const uint32_t*>(data);
-	ADIv5_AP_t *ap = cortexm_ap(t);
+	ADI_v5_AP *ap = cortexm_ap(t);
 #if PC_HOSTED == 1
 	if (ap->dp->ap_reg_write) {
 		for (size_t z = 0; z < sizeof(regnum_cortex_m) / 4; z++) {
@@ -631,29 +631,29 @@ static void cortexm_regs_write(target *t, const void *data)
 		unsigned i;
 
 		/* FIXME: Describe what's really going on here */
-		adiv5_ap_write(ap, ADIV5_AP_CSW, ap->csw | ADIV5_AP_CSW_SIZE_WORD);
+		ap->ap_write(ADIV5_AP_CSW, ap->csw | ADIV5_AP_CSW_SIZE_WORD);
 
 		/* Map the banked data registers (0x10-0x1c) to the
 		 * debug registers DHCSR, DCRSR, DCRDR and DEMCR respectively */
-		adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_TAR,
+		ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_TAR,
 							CORTEXM_DHCSR);
 		/* Walk the regnum_cortex_m array, writing the registers it
 		 * calls out. */
-		adiv5_ap_write(ap, ADIV5_AP_DB(DB_DCRDR), *regs++);
+		ap->ap_write(ADIV5_AP_DB(DB_DCRDR), *regs++);
         /* Required to switch banks */
-		adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
+		ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
 							0x10000 | regnum_cortex_m[0]);
 		for(i = 1; i < sizeof(regnum_cortex_m) / 4; i++) {
-			adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE,
+			ap->get_dp().low_access(ADIV5_LOW_WRITE,
 								ADIV5_AP_DB(DB_DCRDR), *regs++);
-			adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
+			ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_DB(DB_DCRSR),
 								0x10000 | regnum_cortex_m[i]);
 		}
 		if (t->target_options & TOPT_FLAVOUR_V7MF)
 			for(i = 0; i < sizeof(regnum_cortex_mf) / 4; i++) {
-				adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE,
+				ap->get_dp().low_access(ADIV5_LOW_WRITE,
 									ADIV5_AP_DB(DB_DCRDR), *regs++);
-				adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE,
+				ap->get_dp().low_access(ADIV5_LOW_WRITE,
 									ADIV5_AP_DB(DB_DCRSR),
 									0x10000 | regnum_cortex_mf[i]);
 			}
@@ -664,7 +664,7 @@ int cortexm_mem_write_sized(
 	target *t, target_addr dest, const void *src, size_t len, enum align align)
 {
 	cortexm_cache_clean(t, dest, len, true);
-	adiv5_mem_write_sized(cortexm_ap(t), dest, src, len, align);
+	cortexm_ap(t)->mem_write_sized(dest, src, len, align);
 	return target_check_error(t);
 }
 

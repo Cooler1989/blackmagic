@@ -525,13 +525,13 @@ static void stm32l4_detach(target *t)
 
 bool stm32l4_probe(target *t)
 {
-	ADIv5_AP_t *ap = cortexm_ap(t);
+	ADI_v5_AP *ap = cortexm_ap(t);
 	uint32_t idcode;
-	if (ap->dp->targetid > 1) { /* STM32L552 has in valid TARGETID 1 */
-		idcode = (ap->dp->targetid >> 16) & 0xfff;
+	if (ap->get_dp().targetid_ > 1) { /* STM32L552 has in valid TARGETID 1 */
+		idcode = (ap->get_dp().targetid_ >> 16) & 0xfff;
 	} else {
 		uint32_t idcode_reg = STM32L4_DBGMCU_IDCODE_PHYS;
-		if (ap->dp->idcode == 0x0Be12477)
+		if (ap->get_dp().idcode_ == 0x0Be12477)
 			idcode_reg = STM32L5_DBGMCU_IDCODE_PHYS;
 		idcode = target_mem_read32(t, idcode_reg) & 0xfff;
 		DEBUG_INFO("Idcode %08" PRIx32 "\n", idcode);

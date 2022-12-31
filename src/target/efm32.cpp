@@ -593,8 +593,8 @@ bool efm32_probe(target *t)
 	uint8_t di_version = 1;
 
 	/* Read the IDCODE register from the SW-DP */
-	ADIv5_AP_t *ap = cortexm_ap(t);
-	uint32_t ap_idcode = ap->dp->idcode;
+	ADI_v5_AP *ap = cortexm_ap(t);
+	uint32_t ap_idcode = ap->get_dp().idcode_;
 
 	/* Check the idcode. See AN0062 Section 2.2 */
 	if (ap_idcode == 0x2BA01477) {
@@ -986,7 +986,7 @@ struct efm32_aap_priv_s {
        char aap_driver_string[42];
 };
 
-void efm32_aap_probe(ADIv5_AP_t *ap)
+void efm32_aap_probe(ADI_v5_AP *ap)
 {
 	if ((ap->idr & EFM32_APP_IDR_MASK) == EFM32_AAP_IDR) {
 		/* It's an EFM32 AAP! */
@@ -1000,14 +1000,15 @@ void efm32_aap_probe(ADIv5_AP_t *ap)
 
 	/* New target */
 	target *t = target_new();
-	adiv5_ap_ref(ap);
-	t->priv = ap;
-	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
+        ap->ref_inc();
+	t->priv = ap;  //  TODO: priv
+	//  t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
+	t->priv_free = nullptr;
 
 	//efm32_aap_cmd_device_erase(t);
 
 	/* Read status */
-	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", adiv5_ap_read(ap, AAP_STATUS));
+	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", ap->ap_read(AAP_STATUS));
 
 	struct efm32_aap_priv_s *priv_storage = static_cast<efm32_aap_priv_s*>(calloc(1, sizeof(*priv_storage)));
 	sprintf(priv_storage->aap_driver_string,
@@ -1023,11 +1024,11 @@ static bool efm32_aap_cmd_device_erase(target *t, int argc, const char **argv)
 {
 	(void)argc;
 	(void)argv;
-	ADIv5_AP_t *ap = static_cast<ADIv5_AP_t*>(t->priv);
+	ADI_v5_AP *ap = static_cast<ADI_v5_AP*>(t->priv);
 	uint32_t status;
 
 	/* Read status */
-	status = adiv5_ap_read(ap, AAP_STATUS);
+	status = ap->ap_read(AAP_STATUS);
 	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", status);
 
 	if (status & AAP_STATUS_ERASEBUSY) {
@@ -1037,16 +1038,16 @@ static bool efm32_aap_cmd_device_erase(target *t, int argc, const char **argv)
 	}
 
 	DEBUG_INFO("EFM32: Issuing DEVICEERASE...\n");
-	adiv5_ap_write(ap, AAP_CMDKEY, CMDKEY);
-	adiv5_ap_write(ap, AAP_CMD, 1);
+	ap->ap_write(AAP_CMDKEY, CMDKEY);
+	ap->ap_write(AAP_CMD, 1);
 
 	/* Read until 0, probably should have a timeout here... */
 	do {
-		status = adiv5_ap_read(ap, AAP_STATUS);
+		status = ap->ap_read(AAP_STATUS);
 	} while (status & AAP_STATUS_ERASEBUSY);
 
 	/* Read status */
-	status = adiv5_ap_read(ap, AAP_STATUS);
+	status = ap->ap_read(AAP_STATUS);
 	DEBUG_INFO("EFM32: AAP STATUS=%08" PRIx32 "\n", status);
 
 	return true;

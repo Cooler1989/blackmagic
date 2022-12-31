@@ -38,6 +38,9 @@ CFLAGS += -DDFU_SERIAL_LENGTH=13
 CXXFLAGS += -DDFU_SERIAL_LENGTH=13
 endif
 
+LDFLAGS += -specs=nosys.specs
+
+
 VPATH += platforms/stm32
 
 SRC += 	cdcacm.c	\

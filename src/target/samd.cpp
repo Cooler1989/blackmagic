@@ -470,9 +470,9 @@ struct samd_priv_s {
 
 bool samd_probe(target *t)
 {
-	ADIv5_AP_t *ap = cortexm_ap(t);
-	uint32_t cid = adiv5_ap_read_pidr(ap, SAMD_DSU_CID);
-	uint32_t pid = adiv5_ap_read_pidr(ap, SAMD_DSU_PID);
+	ADI_v5_AP *ap = cortexm_ap(t);
+	uint32_t cid = ap->ap_read_pidr(SAMD_DSU_CID);
+	uint32_t pid = ap->ap_read_pidr(SAMD_DSU_PID);
 
 	/* Check the ARM Coresight Component and Perhiperal IDs */
 	if ((cid != SAMD_CID_VALUE) ||

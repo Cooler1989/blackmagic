@@ -70,8 +70,8 @@ bool
 lpc17xx_probe(target *t)
 {
 	/* Read the IDCODE register from the SW-DP */
-	ADIv5_AP_t *ap = cortexm_ap(t);
-	uint32_t ap_idcode = ap->dp->idcode;
+	ADI_v5_AP *ap = cortexm_ap(t);
+	uint32_t ap_idcode = ap->get_dp().idcode_;
 
 	if (ap_idcode == LPC17xx_JTAG_IDCODE || ap_idcode == LPC17xx_SWDP_IDCODE) {
 		/* LPC176x/5x family. See UM10360.pdf 33.7 JTAG TAP Identification*/

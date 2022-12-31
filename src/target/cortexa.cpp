@@ -62,7 +62,7 @@ static uint32_t read_gpreg(target *t, uint8_t regno);
 
 struct cortexa_priv {
 	uint32_t base;
-	ADIv5_AP_t *apb;
+	ADI_v5_AP *apb;
 	struct {
 		uint32_t r[16];
 		uint32_t cpsr;
@@ -188,20 +188,20 @@ static const char tdesc_cortex_a[] =
 static void apb_write(target *t, uint16_t reg, uint32_t val)
 {
 	struct cortexa_priv *priv = static_cast<cortexa_priv *>(t->priv);
-	ADIv5_AP_t *ap = priv->apb;
+	ADI_v5_AP *ap = priv->apb;
 	uint32_t addr = priv->base + 4*reg;
-	adiv5_ap_write(ap, ADIV5_AP_TAR, addr);
-	adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DRW, val);
+	ap->ap_write(ADIV5_AP_TAR, addr);
+	ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_AP_DRW, val);
 }
 
 static uint32_t apb_read(target *t, uint16_t reg)
 {
 	struct cortexa_priv *priv = static_cast<cortexa_priv*>(t->priv);
-	ADIv5_AP_t *ap = priv->apb;
+	ADI_v5_AP *ap = priv->apb;
 	uint32_t addr = priv->base + 4*reg;
-	adiv5_ap_write(ap, ADIV5_AP_TAR, addr);
-	adiv5_dp_low_access(ap->dp, ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
-	return adiv5_dp_low_access(ap->dp, ADIV5_LOW_READ, ADIV5_DP_RDBUFF, 0);
+	ap->ap_write(ADIV5_AP_TAR, addr);
+	ap->get_dp().low_access(ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
+	return ap->get_dp().low_access(ADIV5_LOW_READ, ADIV5_DP_RDBUFF, 0);
 }
 
 static uint32_t va_to_pa(target *t, uint32_t va)
@@ -321,7 +321,7 @@ static bool cortexa_check_error(target *t)
 }
 
 
-bool cortexa_probe(ADIv5_AP_t *apb, uint32_t debug_base)
+bool cortexa_probe(ADI_v5_AP &apb, uint32_t debug_base)
 {
 	target *t;
 
@@ -330,7 +330,7 @@ bool cortexa_probe(ADIv5_AP_t *apb, uint32_t debug_base)
 		return false;
 	}
 
-	adiv5_ap_ref(apb);
+        apb.ref_inc();
 	struct cortexa_priv *priv = static_cast<cortexa_priv*>(calloc(1, sizeof(*priv)));
 	if (!priv) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
@@ -339,14 +339,14 @@ bool cortexa_probe(ADIv5_AP_t *apb, uint32_t debug_base)
 
 	t->priv = priv;
 	t->priv_free = free;
-	priv->apb = apb;
+	priv->apb = &apb;
 	t->mem_read = cortexa_slow_mem_read;
 	t->mem_write = cortexa_slow_mem_write;
 
 	priv->base = debug_base;
 	/* Set up APB CSW, we won't touch this again */
-	uint32_t csw = apb->csw | ADIV5_AP_CSW_SIZE_WORD;
-	adiv5_ap_write(apb, ADIV5_AP_CSW, csw);
+	uint32_t csw = apb.csw | ADIV5_AP_CSW_SIZE_WORD;
+	apb.ap_write(ADIV5_AP_CSW, csw);
 	uint32_t dbgdidr = apb_read(t, DBGDIDR);
 	priv->hw_breakpoint_max = ((dbgdidr >> 24) & 15)+1;
 

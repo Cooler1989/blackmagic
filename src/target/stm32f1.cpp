@@ -163,7 +163,7 @@ bool stm32f1_probe(target *t)
 		t->idcode = target_mem_read32(t, DBGMCU_IDCODE) & 0xfff;
 	size_t flash_size;
 	size_t block_size = 0x400;
-        ADIv5_AP_t *ap;
+        ADI_v5_AP *ap;
 
 	switch(t->idcode) {
 	case 0x29b: /* CS clone */

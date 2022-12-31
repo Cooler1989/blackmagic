@@ -158,6 +158,8 @@ enum align {
 
 typedef struct ADIv5_AP_s ADIv5_AP_t;
 
+class ADI_v5_AP;
+
 /* Try to keep this somewhat absract for later adding SW-DP */
 typedef struct ADIv5_DP_s {
 	int refcnt;
@@ -183,9 +185,9 @@ typedef struct ADIv5_DP_s {
 	bmp_type_t dp_bmp_type;
 	bool (*ap_setup)(int i);
 	void (*ap_cleanup)(int i);
-    void (*ap_regs_read)(ADIv5_AP_t *ap, void *data);
-    uint32_t(*ap_reg_read)(ADIv5_AP_t *ap, int num);
-    void (*ap_reg_write)(ADIv5_AP_t *ap, int num, uint32_t value);
+        void (*ap_regs_read)(ADIv5_AP_t *ap, void *data);
+        uint32_t(*ap_reg_read)(ADIv5_AP_t *ap, int num);
+        void (*ap_reg_write)(ADIv5_AP_t *ap, int num, uint32_t value);
 	void (*read_block)(uint32_t addr, uint8_t *data, int size);
 	void (*dap_write_block_sized)(uint32_t addr, uint8_t *data,
 								  int size, enum align align);
@@ -198,6 +200,8 @@ typedef struct ADIv5_DP_s {
 							size_t len, enum align align);
 	uint8_t dp_jd_index;
 	uint8_t fault;
+
+        ADI_v5_AP *ap = nullptr;
 } ADIv5_DP_t;
 
 class AdiV5Swdp
@@ -206,18 +210,33 @@ class AdiV5Swdp
     uint32_t error();
     uint32_t low_access(uint8_t RnW, uint16_t addr, uint32_t value);
     void dp_write(uint16_t addr, uint32_t value);
+    uint32_t dp_read(uint16_t addr);  //  this is replaced by compile time symbol when Hosted is used;
     bool dp_low_write(uint16_t addr, const uint32_t data);
     unsigned int make_packet_request(uint8_t RnW, uint16_t addr);
     void abort(uint32_t abort);
     int swdp_scan(uint32_t targetid);
+
+    void ref_inc()
+    {
+	refcnt_++;
+    }
+    void ref_dec()
+    {
+	if (--(refcnt_) == 0)
+        {
+            //  free(dp);
+        }
+    }
+
+    int refcnt_;
+    uint32_t idcode_;
+    uint8_t fault_;
+
+    uint32_t targetid_;  /* Contains IDCODE for DPv2 devices.*/
   private:
     void dp_line_reset();
-    uint32_t dp_read(uint16_t addr);  //  this is replaced by compile time symbol when Hosted is used;
     uint32_t swdp_low_access(uint8_t RnW, uint16_t addr, uint32_t value);
 
-    uint8_t fault_;
-    uint32_t idcode_;
-    uint32_t targetid_;  /* Contains IDCODE for DPv2 devices.*/
 
     ADIv5DpHwLayer_i& swdp_tap = SwdpTapInstance();
     ADIv5_DP_t *initial_dp = nullptr;
@@ -238,19 +257,63 @@ struct ADIv5_AP_s {
 	uint16_t ap_partno;
 };
 
-class ADI_v5_AP
+class ADI_v5_AP_Interface
 {
   public:
+    ADI_v5_AP_Interface (AdiV5Swdp& dp): dp_class_(dp) {}
+
     void ap_write(uint16_t addr, uint32_t value);
     uint32_t ap_read(uint16_t addr);
     void mem_write(uint16_t dest, const void *src, size_t len);
-    uint32_t mem_read(uint16_t addr);
+    void mem_write_sized(uint32_t dest, const void *src, size_t len, enum align align);
+    void mem_read(void *dest, uint32_t src, size_t len);
+    void mem_access_setup(uint32_t addr, enum align align);
+  private:
+    AdiV5Swdp& dp_class_;
+};
 
-    int refcnt;
+class ADI_v5_AP
+{
+  public:
+    ADI_v5_AP (AdiV5Swdp& dp, uint8_t ap_sel): apsel_(ap_sel), dp_class_(dp) {}
+
+    ADI_v5_AP (AdiV5Swdp& dp, ADIv5_AP_t &tmp):
+      apsel_(tmp.apsel),
+      idr(tmp.idr),
+      base(tmp.base),
+      csw(tmp.csw),
+      dp_class_(dp)
+  {}
+
+    void ap_write(uint16_t addr, uint32_t value);
+    uint32_t ap_read(uint16_t addr);
+    void mem_write(uint32_t dest, const void *src, size_t len);
+    void mem_write_sized(uint32_t dest, const void *src, size_t len, enum align align);
+    void mem_read(void *dest, uint32_t src, size_t len);
+    uint32_t mem_read32(uint32_t src);
+    uint32_t ap_read_id(uint32_t addr);
+    uint64_t ap_read_pidr(uint32_t addr);
+    void mem_access_setup(uint32_t addr, enum align align);
+
+    AdiV5Swdp& get_dp() const
+    {
+        return dp_class_;
+    }
+
+    void ref_inc();
+    void ref_dec()
+    {
+	if (--(refcnt) == 0) {
+                dp_class_.ref_dec();
+		//free(ap);
+	}
+    }
+
+    int refcnt = 0;
 
     //TODO: use reference to DP
     //ADIv5_DP_t *dp;
-    uint8_t apsel;
+    uint8_t apsel_;
 
     uint32_t idr;
     uint32_t base;
@@ -260,8 +323,26 @@ class ADI_v5_AP
     uint16_t ap_designer;
     uint16_t ap_partno;
 
+    uint32_t update_idr(uint16_t addr)
+    {
+        idr = ap_read(addr);
+	return idr;
+    }
+    uint32_t update_base(uint16_t addr)
+    {
+        base = ap_read(addr);
+	return base;
+    }
+    uint32_t update_csw()
+    {
+        csw = ap_read(ADIV5_AP_CSW) &
+		~(ADIV5_AP_CSW_SIZE_MASK | ADIV5_AP_CSW_ADDRINC_MASK);
+	return csw;
+    }
+    void component_probe(uint32_t addr, int recursion, int num_entry);
   private:
-    //  AdiV5Swdp& dp_class;
+
+    AdiV5Swdp& dp_class_;
 };
 
 #if PC_HOSTED == 0
@@ -331,7 +412,6 @@ void adiv5_dp_write(ADIv5_DP_t *dp, uint16_t addr, uint32_t value);
 void adiv5_dp_init(ADIv5_DP_t *dp);
 void adiv5_dp_init(ADIv5_DP_t *dp, AdiV5Swdp& dp_class);
 void platform_adiv5_dp_defaults(ADIv5_DP_t *dp);
-ADIv5_AP_t *adiv5_new_ap(ADIv5_DP_t *dp, uint8_t apsel);
 void remote_jtag_dev(const jtag_dev_t *jtag_dev);
 void adiv5_ap_ref(ADIv5_AP_t *ap);
 void adiv5_ap_unref(ADIv5_AP_t *ap);

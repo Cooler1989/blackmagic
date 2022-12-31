@@ -524,7 +524,7 @@ enum target_halt_reason mdm_halt_poll(target *t, target_addr *watch)
 	return TARGET_HALT_REQUEST;
 }
 
-void kinetis_mdm_probe(ADIv5_AP_t *ap)
+void kinetis_mdm_probe(ADI_v5_AP *ap)
 {
 	switch(ap->idr) {
 	case KINETIS_MDM_IDR_KZ03: /* Also valid for KE04, no way to check! */
@@ -539,7 +539,7 @@ void kinetis_mdm_probe(ADIv5_AP_t *ap)
 		return;
 	}
 
-	adiv5_ap_ref(ap);
+	ap->ref_inc();
 	t->priv = ap;
 	t->priv_free = reinterpret_cast<decltype(target::priv_free)>((void*)adiv5_ap_unref);
 

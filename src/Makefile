@@ -112,7 +112,7 @@ OBJ_CPP = $(patsubst %.cpp,%.o,$(SRC_CPP))
 
 $(TARGET): include/version.h $(OBJ) $(OBJ_CPP)
 	@echo "  LD      $@"
-	$(Q)$(CC) -o $@ $(OBJ) $(LDFLAGS)
+	$(Q)$(CXX) -o $@ $(OBJ) $(LDFLAGS)
 
 %.o:	%.cpp
 	@echo "  CXX     $<"

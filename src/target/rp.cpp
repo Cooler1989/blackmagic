@@ -418,10 +418,10 @@ bool rp_probe(target *t)
 
 static bool rp_rescue_do_reset(target *t)
 {
-	ADIv5_AP_t *ap = (ADIv5_AP_t *)t->priv;
-	ap->dp->low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_DP_CTRLSTAT,
+	ADI_v5_AP *ap = (ADI_v5_AP *)t->priv;
+	ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_DP_CTRLSTAT,
 						  ADIV5_DP_CTRLSTAT_CDBGPWRUPREQ);
-	ap->dp->low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_DP_CTRLSTAT, 0);
+	ap->get_dp().low_access(ADIV5_LOW_WRITE, ADIV5_DP_CTRLSTAT, 0);
 	return false;
 }
 
@@ -431,18 +431,19 @@ typedef bool(*rp_rescue_do_reset_t)(target*);
  *
  * Attach to this DP will do the reset, but will fail to attach!
  */
-void rp_rescue_probe(ADIv5_AP_t *ap)
+void rp_rescue_probe(ADI_v5_AP *ap)
 {
 	target *t = target_new();
 	if (!t) {
 		return;
 	}
 
-        typedef void(*adiv5_ap_unref_t)(void*);
 
-	adiv5_ap_ref(ap);
+        ap->ref_inc();
 	t->attach = reinterpret_cast<rp_rescue_do_reset_t>((void*)rp_rescue_do_reset);
 	t->priv = ap;
-	t->priv_free = reinterpret_cast<adiv5_ap_unref_t>(adiv5_ap_unref);
+        //  typedef void(*adiv5_ap_unref_t)(void*);
+	//  t->priv_free = reinterpret_cast<adiv5_ap_unref_t>(adiv5_ap_unref);
+	t->priv_free = nullptr;
 	t->driver = "Raspberry RP2040 Rescue(Attach to reset!)";
 }
