@@ -1,1 +1,23 @@
 See https://github.com/blackmagic-debug/blackmagic/wiki/Hacking
+
+Pawel P:
+
+Test basic results:
+Prepare binary to be loaded to tested target. In this example Seeeduino XIAO was used. Target is suppose to be connected to XIAO to program it.
+
+This command is used to trigger programming of XIAO
+  > arm-none-eabi-gdb /home/cooler1989/zephyrproject/zephyr/build/zephyr/zephyr.elf -ex "tar ext $(readlink -f /dev/serial/by-id/usb-Black_Sphere_Technologies_Black_Magic_Probe__F4Discovery__*-if00)" -ex "mon s" -ex "att 1" -ex "load" -ex "q" -ex "y"
+
+
+    Initial setup:
+
+                                HOST PC
+                                  |
+                            JTAG programming for development
+                                  |
+                                  v
+
+    HOST PC --- USB micro; developed programming ---> STM32F4Discovery  --- GPIO ---> XIAO
+
+
+    Programming for development is standard: OpenOCD + gdb + nvim.
