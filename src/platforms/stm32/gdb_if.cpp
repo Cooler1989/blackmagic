@@ -26,8 +26,13 @@
 #include "cdcacm.h"
 #include "gdb_if.h"
 
-static uint32_t count_out;
-static uint32_t count_in;
+#include "data_out_in_count.h"
+#include "data_output.h"
+
+static uint32_t count_out = 0;
+static uint32_t count_in = 0;
+static uint32_t count_total_in = 0;
+static uint32_t save_group_start = 0;
 static uint32_t out_ptr;
 static uint8_t buffer_out[CDCACM_PACKET_SIZE];
 static uint8_t buffer_in[CDCACM_PACKET_SIZE];
@@ -36,33 +41,55 @@ static volatile uint32_t count_new;
 static uint8_t double_buffer_out[CDCACM_PACKET_SIZE];
 #endif
 
+uint32_t output_group_data_index = 1;  // odd/even starts
+
 void gdb_if_putchar(unsigned char c, int flush)
 {
-	buffer_in[count_in++] = c;
-	if(flush || (count_in == CDCACM_PACKET_SIZE)) {
-		/* Refuse to send if USB isn't configured, and
-		 * don't bother if nobody's listening */
-		if((cdcacm_get_config() != 1) || !cdcacm_get_dtr()) {
-			count_in = 0;
-			return;
-		}
-		while(usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
-			buffer_in, count_in) <= 0);
+  (void) flush;
 
-		if (flush && (count_in == CDCACM_PACKET_SIZE)) {
-			/* We need to send an empty packet for some hosts
-			 * to accept this as a complete transfer. */
-			/* libopencm3 needs a change for us to confirm when
-			 * that transfer is complete, so we just send a packet
-			 * containing a null byte for now.
-			 */
-			while (usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
-				"\0", 1) <= 0);
-		}
+  buffer_in[count_in++] = c;
+  if( output_input_count[output_group_data_index] == count_in )
+  {
+    volatile int result = memcmp(buffer_in, &(data_serial_output[save_group_start]),
+          output_input_count[output_group_data_index] );  // size
+    save_group_start = count_total_in;
+    while(result);
+    volatile bool check_flush = !(bool)flush;
+    while(check_flush);
+  }
 
-		count_in = 0;
-	}
+  count_total_in++;
+
+  return;
 }
+
+//  void gdb_if_putchar(unsigned char c, int flush)
+//  {
+//  	buffer_in[count_in++] = c;
+//  	if(flush || (count_in == CDCACM_PACKET_SIZE)) {
+//  		/* Refuse to send if USB isn't configured, and
+//  		 * don't bother if nobody's listening */
+//  		if((cdcacm_get_config() != 1) || !cdcacm_get_dtr()) {
+//  			count_in = 0;
+//  			return;
+//  		}
+//  		while(usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
+//  			buffer_in, count_in) <= 0);
+//
+//  		if (flush && (count_in == CDCACM_PACKET_SIZE)) {
+//  			/* We need to send an empty packet for some hosts
+//  			 * to accept this as a complete transfer. */
+//  			/* libopencm3 needs a change for us to confirm when
+//  			 * that transfer is complete, so we just send a packet
+//  			 * containing a null byte for now.
+//  			 */
+//  			while (usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
+//  				"\0", 1) <= 0);
+//  		}
+//
+//  		count_in = 0;
+//  	}
+//  }
 
 #ifdef STM32F4
 void gdb_usb_out_cb(usbd_device *dev, uint8_t ep)
@@ -79,6 +106,7 @@ void gdb_usb_out_cb(usbd_device *dev, uint8_t ep)
 
 static void gdb_if_update_buf(void)
 {
+    return;
 	while (cdcacm_get_config() != 1);
 #ifdef STM32F4
 	asm volatile ("cpsid i; isb");
@@ -97,9 +125,26 @@ static void gdb_if_update_buf(void)
 #endif
 }
 
+
+#include "data_include_file.h"
+
 unsigned char gdb_if_getchar(void)
 {
 
+        gdb_if_update_buf();
+        static size_t data_ptr = 0;
+        if( data_ptr <= sizeof(data_serial) )
+        {
+            static volatile int cnt;
+            cnt = 1000;
+            while(cnt-- > 0);
+
+            return data_serial[data_ptr++];
+        }
+        else
+        {
+          while(1);
+        }
 	while (!(out_ptr < count_out)) {
 		/* Detach if port closed */
 		if (!cdcacm_get_dtr())
@@ -113,6 +158,8 @@ unsigned char gdb_if_getchar(void)
 
 unsigned char gdb_if_getchar_to(int timeout)
 {
+        return gdb_if_getchar();
+
 	platform_timeout t;
 	platform_timeout_set(&t, timeout);
 

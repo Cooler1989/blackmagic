@@ -27,3 +27,5 @@ ifndef NO_LIBOPENCM3
 endif
 	$(Q)$(MAKE) $(MFLAGS) -C src $@
 
+install:
+	echo "Install"

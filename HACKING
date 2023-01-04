@@ -21,3 +21,10 @@ This command is used to trigger programming of XIAO
 
 
     Programming for development is standard: OpenOCD + gdb + nvim.
+
+
+
+
+Blackmagic probe build command for stm32f4discovery:
+
+    make clean && make -j 1 OPT_FLAGS=-O0 PROBE_HOST=f4discovery ENABLE_DEBUG=1 V=1
