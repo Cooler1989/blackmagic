@@ -1,0 +1,1 @@
+make -j 2 OPT_FLAGS=-O0 PROBE_HOST=f4discovery ENABLE_DEBUG=1 V=1
